@@ -38,6 +38,25 @@ export const FIELD_BOX_TEMPLATES: Record<string, Record<string, [number, number,
     // Tightened on 2026-06-25 to remove the given-name overlap that produced
     // "гей Сергеевич" instead of "Сергеевич" on the real handwritten birth cert.
     patronymic: [0.2641, 0.2923, 0.4482, 0.3617],
+    // Added 2026-07-06: father's own given-name+patronymic line (right page, "Отец/Батько" row).
+    // Verified live: raxtemur reads both cleanly (given-name conf 0.98, patronymic legible) once
+    // fed the fully content-orient-corrected buffer (see contentOrientCw fix). Concatenated into
+    // father_full_name by HTR_COMBINE_FIELDS below — surname is assumed shared with the child
+    // (verified true on the reference document; a mismatch would surface as a review flag, never
+    // silently, since this field stays review-gated regardless).
+    father_given_name: [0.5499, 0.2584, 0.6662, 0.3004],
+    father_patronymic: [0.6904, 0.2584, 0.9205, 0.3036],
+    // Mother's row (item 2, 2026-07-06): the 3 earlier attempts (see prior note, replaced here)
+    // tried a father-style TWO-box split (given / patronymic separately) — live-verified this
+    // split makes it WORSE (both words individually garbled) vs a SINGLE combined box over both
+    // words (stable ~0.95 confidence across repeat reads, missing only the trailing letter of the
+    // patronymic — a truncation the raxtemur model exhibits at crop-line ends, not a framing
+    // defect: widening the box did not recover it). Kept as ONE box for this reason, unlike the
+    // father's two separate boxes. mother_full_name's surname token is borrowed from
+    // child_family_name (HTR_COMBINE_FIELDS below) rather than read from her own row — her own
+    // surname crop live-tested less reliable (one-letter substitution, ~0.9 confidence) than the
+    // already owner-verified child surname. No real names in this comment — fictional-data policy.
+    mother_given_patronymic: [0.5499, 0.3924, 0.9932, 0.4231],
   },
   ua_internal_passport_booklet: {
     // Frozen from qa-private/htr-poc/stable_bench.py on the real booklet image.
@@ -156,11 +175,24 @@ export async function localizeHandwrittenFields(
 /**
  * Run the full field-first handwriting route. Disabled ([]) unless the HTR sidecar is configured.
  * Localize → native-res crop → HTR read → 3-layer review-gated result. Fail-open everywhere.
+ *
+ * @param contentOrientCw ROOT-CAUSE FIX (2026-07-06, found while testing birth_cert_handwritten_01.jpg
+ *   with the sidecar live): EXIF-only normalization is NOT enough — this document's EXIF tag is wrong
+ *   (documented elsewhere in this codebase), so the OLD "EXIF-bake only" buffer left the crop content
+ *   sideways. Live A/B on the ALREADY-SHIPPED family_name/given_name/patronymic template boxes: EXIF-only
+ *   buffer → raxtemur reads garbled/wrong text; the SAME boxes against the fully content-orient-corrected
+ *   buffer → all three fields read back EXACT matches to direct visual inspection. `documentFieldReader.ts`
+ *   already computes this correction (`orientToUpright()`'s `applied` cw) for the main LLM read but never
+ *   passed it here — the crop route silently re-derived its own (EXIF-only) orientation, discarding it.
+ *   Callers pass the SAME `applied` value already computed upstream; 0 (the default) is byte-identical
+ *   to the pre-fix behavior (EXIF-bake only), so documents where EXIF alone is already correct — the
+ *   common case — are unaffected.
  */
 export async function readHandwrittenRoute(
   originalBuffer: Buffer,
   mime: string,
   docTypeId?: string,
+  contentOrientCw = 0,
 ): Promise<HandwrittenFieldResult[]> {
   // TRANSPORT selection (One-Brain v2 crop-reader): the proven native-res crop route has two
   // transports — the HTR sidecar (preferred when hosted) and the primary-LLM crop reader
@@ -170,12 +202,16 @@ export async function readHandwrittenRoute(
     isHtrSidecarEnabled() ? 'htr' : isLlmCropReaderEnabled() ? 'llm' : null
   if (!transport) return []
   const llmProvider = resolveLlmCropProvider()
-  // EXIF-NORMALIZE ONCE (Step-5b fix): the raw original may carry an EXIF orientation tag. Both the
-  // dimension read (box scaling) and sharp.extract() would otherwise see/apply EXIF inconsistently →
-  // the crop lands in the wrong region. Bake EXIF in + strip the tag, then use ONE oriented buffer for
-  // both localization (dims) and cropping (extract), so coordinates and pixels share one system.
+  // EXIF-NORMALIZE ONCE (Step-5b fix), THEN apply the same content-orient correction the main read
+  // already used (see contentOrientCw doc above) — both the dimension read (box scaling) and
+  // sharp.extract() must see/apply the SAME final orientation, so coordinates and pixels share one system.
   let buf = originalBuffer
-  try { buf = await (await import('sharp')).default(originalBuffer, { failOn: 'error' }).rotate().toBuffer() } catch { buf = originalBuffer }
+  try {
+    const sharp = (await import('sharp')).default
+    let s = sharp(originalBuffer, { failOn: 'error' }).rotate()
+    if (contentOrientCw) s = sharp(await s.toBuffer()).rotate(contentOrientCw)
+    buf = await s.toBuffer()
+  } catch { buf = originalBuffer }
   const boxes = await localizeHandwrittenFields(buf, mime, docTypeId)
   if (boxes.length === 0) return []
   const reads = transport === 'htr'

@@ -42,10 +42,36 @@ describe('readDocument → htr_only:* (LLM read FAILED, HTR reads field-first) �
     const res = await readDocument(img, 'image/png', 'ua_birth_certificate', { provider: failingProvider, originalBuffer: img })
 
     expect(res.status.startsWith('htr_only')).toBe(true) // the LLM-independent path ran
-    const fam = res.fields.find((f) => f.field === 'family_name')
+    // ua_birth_certificate's registry uses 'child_family_name' (not the bare box-template key
+    // 'family_name') — HTR_FIELD_KEY_ALIASES (2026-07-06 fix) remaps the HTR read onto the real
+    // registry key; asserting the bare key here would silently re-introduce the orphan-key bug
+    // this fix closed (found live: the HTR route produced correct reads that never reached output).
+    const fam = res.fields.find((f) => f.field === 'child_family_name')
     expect(fam).toBeTruthy()
     expect((fam!.raw_cyrillic ?? '').length).toBeGreaterThan(0) // read field-first by HTR
     expect(fam!.review_required).toBe(true)                     // always review-gated
+    expect(res.fields.find((f) => f.field === 'family_name')).toBeUndefined() // no orphan bare-key row
+  })
+
+  it('ua_birth_certificate_soviet (item 5, 2026-07-06) — same field-key aliasing as the shared ' +
+     'ua_birth_certificate registry, since HTR_FIELD_KEY_ALIASES/HTR_COMBINE_FIELDS are exact-key ' +
+     'lookups and needed their own entry for this docTypeId', async () => {
+    process.env.HTR_SIDECAR_URL = 'http://127.0.0.1:8077'
+    delete process.env.GEMINI_API_KEY; delete process.env.GEMINI_API_KEY_PAY
+    global.fetch = vi.fn(async (url: string) => {
+      if (String(url).includes('/read')) return new Response(JSON.stringify({ text: 'Соловьяк', confidence: 0.95 }), { status: 200 })
+      throw new Error('no Gemini expected: ' + url)
+    }) as unknown as typeof fetch
+
+    const img = await png()
+    const res = await readDocument(img, 'image/png', 'ua_birth_certificate_soviet', { provider: failingProvider, originalBuffer: img })
+
+    expect(res.status.startsWith('htr_only')).toBe(true)
+    const fam = res.fields.find((f) => f.field === 'child_family_name')
+    expect(fam).toBeTruthy()
+    expect((fam!.raw_cyrillic ?? '').length).toBeGreaterThan(0)
+    expect(fam!.review_required).toBe(true)
+    expect(res.fields.find((f) => f.field === 'family_name')).toBeUndefined()
   })
 
   it('LLM 503 + HTR sidecar DOWN → FAIL-CLOSED (vision_failed, no fabricated value)', async () => {
@@ -58,5 +84,38 @@ describe('readDocument → htr_only:* (LLM read FAILED, HTR reads field-first) �
     expect(res.status.startsWith('htr_only')).toBe(false)
     expect(res.status.startsWith('vision_failed')).toBe(true)
     expect(res.fields).toEqual([])
+  })
+
+  it('2026-07-06: father_full_name is COMBINED from father_given_name+father_patronymic boxes ' +
+    '(single registry field, unlike the child\'s 3-way split) — surname borrowed from the ' +
+    'ALREADY-corrected child_family_name, per HTR_COMBINE_FIELDS', async () => {
+    process.env.HTR_SIDECAR_URL = 'http://127.0.0.1:8077'
+    delete process.env.GEMINI_API_KEY; delete process.env.GEMINI_API_KEY_PAY
+    // FIELD_BOX_TEMPLATES.ua_birth_certificate order: family_name, given_name, patronymic,
+    // father_given_name, father_patronymic, mother_given_patronymic — matches the sidecar call
+    // order below.
+    const texts = ['Соловьяк', 'Іван', 'Іванович', 'Петро', 'Петрович', 'Олена Іванівна']
+    let i = 0
+    global.fetch = vi.fn(async (url: string) => {
+      if (String(url).includes('/read')) return new Response(JSON.stringify({ text: texts[i++], confidence: 0.9 }), { status: 200 })
+      throw new Error('no Gemini expected: ' + url)
+    }) as unknown as typeof fetch
+
+    const img = await png()
+    const res = await readDocument(img, 'image/png', 'ua_birth_certificate', { provider: failingProvider, originalBuffer: img })
+
+    const father = res.fields.find((f) => f.field === 'father_full_name')
+    expect(father).toBeTruthy()
+    expect(father!.raw_cyrillic).toBe('Соловьяк Петро Петрович') // corrected child surname + father's own given+patronymic
+    expect(father!.review_required).toBe(true)
+    expect(father!.review_reasons).toContain('handwritten_htr_combined')
+    // item 2 (2026-07-06): mother_full_name is ALSO combined now — a SINGLE given+patronymic box
+    // (unlike father's two separate boxes; a two-box split live-tested worse for this row) plus
+    // the same borrowed child surname.
+    const mother = res.fields.find((f) => f.field === 'mother_full_name')
+    expect(mother).toBeTruthy()
+    expect(mother!.raw_cyrillic).toBe('Соловьяк Олена Іванівна')
+    expect(mother!.review_required).toBe(true)
+    expect(mother!.review_reasons).toContain('handwritten_htr_combined')
   })
 })

@@ -35,6 +35,13 @@ export interface DocumentPostureEnvelope {
   orientation_180_disambiguated?: boolean
   /** true when the sparse-form 90° adjunct confirm ran and resolved the pose. */
   orientation_90_disambiguated?: boolean
+  /** TRUTHFULNESS FIX (2026-07-07, One Brain priority #1): the Gemini/OpenAI provider layer's own
+   *  causal account — enabled ≠ attempted ≠ measured ≠ trusted. Absent only when content-orient
+   *  never ran at all (contentOrientRan=false was not even supplied); present and honest in every
+   *  other case, including "flag on but no provider key ever existed" (previously silently
+   *  reported as `orientation_status: 'upright'` via the un-set-but-truthy `contentOrientRan` bug
+   *  this fix closes). See detectOrientation.ts's `normalizeOrientationTelemetry`. */
+  orientation_telemetry?: import('../orientation/detectOrientation').OrientationTelemetry
 }
 
 export interface PostureInputs {
@@ -65,6 +72,10 @@ export interface PostureInputs {
   /** how the bytes reached the reader */
   cropSource?: DocumentPostureEnvelope['crop_source']
   inputFormat?: DocumentPostureEnvelope['input_format']
+  /** The Gemini/OpenAI provider-layer causal account (see DocumentPostureEnvelope field of the
+   *  same name) — passed straight through, never recomputed here (guardrail #2 lives in
+   *  detectOrientation.ts's normalizeOrientationTelemetry, not in this assembly function). */
+  orientationTelemetry?: DocumentPostureEnvelope['orientation_telemetry']
 }
 
 /**
@@ -151,5 +162,6 @@ export function buildPostureEnvelope(i: PostureInputs): DocumentPostureEnvelope 
     orientation_backstop_used,
     ...(i.disambiguated180 !== undefined ? { orientation_180_disambiguated: i.disambiguated180 } : {}),
     ...(i.disambiguated90 !== undefined ? { orientation_90_disambiguated: i.disambiguated90 } : {}),
+    ...(i.orientationTelemetry !== undefined ? { orientation_telemetry: i.orientationTelemetry } : {}),
   }
 }

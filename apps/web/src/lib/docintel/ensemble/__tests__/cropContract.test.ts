@@ -15,6 +15,13 @@ describe('Step-6: deterministic crop contract', () => {
       family_name: [0.2326, 0.2277, 0.5451, 0.2923],
       given_name: [0.1308, 0.2923, 0.2447, 0.3617],
       patronymic: [0.2641, 0.2923, 0.4482, 0.3617], // tightened 2026-06-25 (no given-name overlap)
+      // Added 2026-07-06: father's given-name+patronymic line, concatenated into father_full_name
+      // downstream (HTR_COMBINE_FIELDS in documentFieldReader.ts). Live-verified clean reads.
+      father_given_name: [0.5499, 0.2584, 0.6662, 0.3004],
+      father_patronymic: [0.6904, 0.2584, 0.9205, 0.3036],
+      // Added 2026-07-06 (item 2): mother's given+patronymic line, ONE combined box (a two-box
+      // split live-tested worse for this row) — feeds mother_full_name downstream.
+      mother_given_patronymic: [0.5499, 0.3924, 0.9932, 0.4231],
     })
   })
 

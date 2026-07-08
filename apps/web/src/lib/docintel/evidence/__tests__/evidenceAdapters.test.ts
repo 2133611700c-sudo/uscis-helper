@@ -31,7 +31,8 @@ describe('templateEvidenceForDocType', () => {
     // otherwise template evidence never attached on the live document.
     expect(keys).toEqual([
       'child_family_name', 'child_given_name', 'child_patronymic',
-      'family_name', 'given_name', 'patronymic',
+      'family_name', 'father_given_name', 'father_patronymic', 'given_name',
+      'mother_given_patronymic', 'patronymic',
     ])
 
     for (const r of regions) {
@@ -47,7 +48,8 @@ describe('templateEvidenceForDocType', () => {
     const regions = templateEvidenceForDocType('ua_birth_certificate_soviet_v1')
     expect(regions.map((r) => r.fieldKey).sort()).toEqual([
       'child_family_name', 'child_given_name', 'child_patronymic',
-      'family_name', 'given_name', 'patronymic',
+      'family_name', 'father_given_name', 'father_patronymic', 'given_name',
+      'mother_given_patronymic', 'patronymic',
     ])
   })
 

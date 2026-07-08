@@ -48,7 +48,7 @@ describe('handwrittenFieldRoute — field-first HTR route (ADR-026), OFF by defa
     delete process.env.GEMINI_API_KEY_PAY; delete process.env.GEMINI_API_KEY; delete process.env.HTR_FIELD_BOXES
     const fetchSpy = vi.fn(); global.fetch = fetchSpy as unknown as typeof fetch
     const boxes = await localizeHandwrittenFields(await pngImage(), 'image/png', 'ua_birth_certificate') // 1000x1000
-    expect(boxes.map((b) => b.field).sort()).toEqual(['family_name', 'given_name', 'patronymic'])
+    expect(boxes.map((b) => b.field).sort()).toEqual(['family_name', 'father_given_name', 'father_patronymic', 'given_name', 'mother_given_patronymic', 'patronymic'])
     expect(boxes.find((b) => b.field === 'family_name')!.box).toEqual([233, 228, 545, 292]) // 0.2326*1000 etc.
     expect(boxes.find((b) => b.field === 'patronymic')!.box).toEqual([264, 292, 448, 362]) // tuned from the real cert proof
     expect(fetchSpy).not.toHaveBeenCalled() // NO Gemini call — deterministic template
@@ -77,5 +77,38 @@ describe('handwrittenFieldRoute — field-first HTR route (ADR-026), OFF by defa
     expect(f.normalized_value).toBe('Соловьяк')   // normalization (codex downstream)
     expect(f.review_required).toBe(true)            // review — raxtemur can't abstain → always gated
     expect(f.review_reason).toBe('handwritten_htr_read')
+  })
+
+  it('ROOT-CAUSE FIX (2026-07-06): contentOrientCw actually rotates the buffer before localizing/' +
+    'cropping — EXIF-bake-only was NOT enough (live-measured on birth_cert_handwritten_01.jpg: ' +
+    'garbled/wrong HTR reads on the EXIF-only buffer vs exact-match reads on the same boxes against ' +
+    'the fully content-orient-corrected buffer). A non-square image proves the rotation is applied: ' +
+    'the NON-LLM template box lands in a different absolute pixel region once rotated.', async () => {
+    delete process.env.GEMINI_API_KEY_PAY; delete process.env.GEMINI_API_KEY; delete process.env.HTR_FIELD_BOXES
+    const sharp = (await import('sharp')).default
+    // Wide (non-square, INKED so the mandatory blank-crop gate passes) image so width/height swap
+    // under a 90°/270° rotation is observable.
+    const wide = await sharp(await pngImage()).extend({ bottom: 500, background: '#f4f1ea' }).png().toBuffer() // 1000x1500
+
+    const noRotation = await localizeHandwrittenFields(wide, 'image/png', 'ua_birth_certificate')
+    const rotated = await sharp(wide).rotate(90).toBuffer()
+    const preRotatedBoxes = await localizeHandwrittenFields(rotated, 'image/png', 'ua_birth_certificate')
+
+    // Boxes computed against the ALREADY-ROTATED (500x1000) buffer must differ from boxes computed
+    // against the original (1000x500) buffer — proving dimension-dependent scaling actually engages.
+    expect(noRotation.find((b) => b.field === 'family_name')!.box)
+      .not.toEqual(preRotatedBoxes.find((b) => b.field === 'family_name')!.box)
+
+    // readHandwrittenRoute's own contentOrientCw plumbing: passing a nonzero angle must not throw
+    // and must still run the full localize→crop→read pipeline (sidecar path) on the rotated buffer.
+    process.env.HTR_SIDECAR_URL = 'http://127.0.0.1:8077'
+    global.fetch = vi.fn(async (url: string) => {
+      if (String(url).includes('/read')) return new Response(JSON.stringify({ text: 'X', confidence: 0.95 }), { status: 200 })
+      throw new Error('unexpected fetch: ' + url)
+    }) as unknown as typeof fetch
+    const outNoRotate = await readHandwrittenRoute(wide, 'image/png', 'ua_birth_certificate', 0)
+    const outWithRotate = await readHandwrittenRoute(wide, 'image/png', 'ua_birth_certificate', 90)
+    expect(outNoRotate.length).toBeGreaterThan(0)
+    expect(outWithRotate.length).toBeGreaterThan(0)
   })
 })

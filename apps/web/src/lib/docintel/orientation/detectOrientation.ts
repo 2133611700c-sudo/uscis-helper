@@ -26,6 +26,224 @@ export type Cw = 0 | 90 | 180 | 270
 const GEMINI_URL = (model: string, key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
 
+const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
+
+/**
+ * TRUTHFULNESS FIX (2026-07-07, One Brain priority #1): enabled ≠ attempted ≠ measured ≠ trusted ≠
+ * final. A feature flag being ON only means the code branch is PERMITTED to run — it is NOT proof
+ * any provider was actually called, responded, or produced a usable answer. Before this fix,
+ * `documentFieldReader.ts` computed `contentOrientRan: isContentOrientEnabled()` — i.e. it reported
+ * "orientation ran" whenever the FLAG was on, even when the Gemini API key was missing and the
+ * orientation block never executed at all. That silently produced `orientation_status: 'upright'`
+ * (medium confidence) for a document that was NEVER actually checked — a direct violation of this
+ * module's own law ("never claim a field measured when it is not").
+ *
+ * GUARDRAILS (owner spec, 2026-07-07):
+ *  1. Only the orientation functions in THIS file may mutate a `RawOrientTelemetry` accumulator —
+ *     callers (documentFieldReader.ts) only ever READ the normalized result.
+ *  2. Exactly ONE function, `normalizeOrientationTelemetry()`, converts raw accumulated facts into
+ *     the final `OrientationTelemetry` — called once, at the boundary in `readDocument()`. No other
+ *     code site is allowed to compute a `status`/`measured`/`trusted` value independently.
+ *  3. `angle` is null unless `measured` is true; a provider slot (`primaryProvider`/
+ *     `fallbackProvider`) is null unless THAT SPECIFIC provider produced a usable result — an
+ *     attempt alone (even a failed one) never earns the provider name in these fields.
+ */
+export interface RawOrientTelemetry {
+  primaryAttempted: boolean
+  primarySucceeded: boolean
+  /** Short, PII-free classification (e.g. 'network_error' | 'http_4xx' | 'http_5xx' |
+   *  'invalid_json' | 'unrecognized_position'); never a raw exception message or request body. */
+  primaryErrorCode: string | null
+  fallbackAttempted: boolean
+  fallbackSucceeded: boolean
+  fallbackErrorCode: string | null
+  /** At least one provider returned a decodable response, even if unusable — distinguishes a
+   *  hard failure (nothing ever answered) from a soft one (something answered, just not usable). */
+  anyResponseReceived: boolean
+  /** The raw detected angle, BEFORE the "only trust it if measured" gate is applied downstream. */
+  angle: Cw | null
+}
+
+export function newRawOrientTelemetry(): RawOrientTelemetry {
+  return {
+    primaryAttempted: false, primarySucceeded: false, primaryErrorCode: null,
+    fallbackAttempted: false, fallbackSucceeded: false, fallbackErrorCode: null,
+    anyResponseReceived: false, angle: null,
+  }
+}
+
+export interface OrientationTelemetry {
+  enabled: boolean
+  attempted: boolean
+  measured: boolean
+  /** True only when the PRIMARY (Gemini) provider produced the measurement — matches ADR-018:
+   *  a fallback read is availability-only and is NEVER treated as an acceptance-grade result. */
+  trusted: boolean
+  /** Always true once normalized — this IS the final determination for this read, not an
+   *  intermediate confirm-step's own partial tally. */
+  final: boolean
+
+  primaryProvider: 'gemini' | 'openai' | null
+  primaryAttempted: boolean
+  primaryMeasured: boolean
+  primaryErrorCode: string | null
+
+  fallbackProvider: 'openai' | 'gemini' | null
+  fallbackAttempted: boolean
+  fallbackMeasured: boolean
+  fallbackErrorCode: string | null
+
+  angle: Cw | null
+  confidence: number | null
+  status:
+    | 'disabled'
+    | 'not_measured_no_provider'
+    | 'attempted_failed'
+    | 'measured_upright'
+    | 'measured_rotated'
+    | 'uncertain_low_confidence'
+    | 'fallback_measured'
+}
+
+/**
+ * THE single point of truth converting raw provider facts into the reportable orientation status.
+ * Pure function; called exactly once per read, from `readDocument()`. See guardrail #2 above.
+ */
+export function normalizeOrientationTelemetry(raw: RawOrientTelemetry, enabled: boolean): OrientationTelemetry {
+  const attempted = raw.primaryAttempted || raw.fallbackAttempted
+  const primaryMeasured = raw.primarySucceeded
+  const fallbackMeasured = raw.fallbackSucceeded
+  const measured = primaryMeasured || fallbackMeasured
+  const angle = measured ? raw.angle : null
+
+  let status: OrientationTelemetry['status']
+  if (!enabled) status = 'disabled'
+  else if (!attempted) status = 'not_measured_no_provider'
+  else if (primaryMeasured) status = angle === 0 ? 'measured_upright' : 'measured_rotated'
+  else if (fallbackMeasured) status = 'fallback_measured'
+  else if (raw.anyResponseReceived) status = 'uncertain_low_confidence'
+  else status = 'attempted_failed'
+
+  return {
+    enabled, attempted, measured, trusted: primaryMeasured, final: true,
+    primaryProvider: primaryMeasured ? 'gemini' : null,
+    primaryAttempted: raw.primaryAttempted, primaryMeasured, primaryErrorCode: raw.primaryErrorCode,
+    fallbackProvider: fallbackMeasured ? 'openai' : null,
+    fallbackAttempted: raw.fallbackAttempted, fallbackMeasured, fallbackErrorCode: raw.fallbackErrorCode,
+    angle, confidence: measured ? (primaryMeasured ? 0.7 : 0.5) : null,
+    status,
+  }
+}
+
+/** ADR-018: Gemini stays the primary orientation reader. This is an AVAILABILITY-ONLY fallback —
+ *  used only when the Gemini call itself fails (network error / non-2xx) or returns a response
+ *  that does not decode to one of the expected answers (malformed/non-conforming JSON), never to
+ *  second-guess a Gemini answer that DID decode. Live-verified 2026-07-06 on
+ *  birth_cert_handwritten_01.jpg while Gemini was
+ *  blocked by a project/key tier limit (429 free_tier_requests limit:0): OpenAI's gpt-4.1 on the
+ *  same grid image returned the same cw=270 documented as proven-correct for this file since
+ *  2026-06-27 (3/3 stable runs), independently confirmed by direct visual inspection. */
+function openAiApiKeyFromEnv(env: Record<string, string | undefined> = process.env): string | null {
+  return env.OPENAI_API_KEY || null
+}
+
+function openAiVisionModelFromEnv(env: Record<string, string | undefined> = process.env): string {
+  return env.OPENAI_VISION_MODEL || 'gpt-4.1'
+}
+
+/** Minimal OpenAI vision call returning the raw JSON text of choices[0].message.content, or null
+ *  on any failure. Fail-open, mirrors the Gemini call sites' contract exactly. */
+async function callOpenAiVisionJson(
+  prompt: string, imageBuffer: Buffer, apiKey: string, model: string, timeoutMs: number,
+): Promise<string | null> {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  try {
+    const isReasoning = /^(gpt-5|o[0-9])/.test(model)
+    const res = await fetch(OPENAI_URL, {
+      method: 'POST', signal: ctrl.signal,
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBuffer.toString('base64')}` } },
+          ],
+        }],
+        response_format: { type: 'json_object' },
+        ...(isReasoning ? { max_completion_tokens: 64 } : { max_tokens: 64, temperature: 0 }),
+      }),
+    })
+    if (!res.ok) return null
+    const j = await res.json()
+    return j?.choices?.[0]?.message?.content ?? null
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+interface OpenAiFallbackOpts {
+  /** Injectable for tests; defaults to a real fetch-backed call using env credentials. */
+  openaiCaller?: (prompt: string, imageBuffer: Buffer, apiKey: string, model: string, timeoutMs: number) => Promise<string | null>
+  openaiApiKey?: string | null
+  openaiModel?: string
+  /** Guardrail #1: the ONLY way callers observe orientation facts — orientation functions in this
+   *  file mutate it directly; nobody outside this file may write to it. */
+  telemetry?: RawOrientTelemetry
+}
+
+async function fallbackPosViaOpenAi(
+  imageBuffer: Buffer, prompt: string, opts: OpenAiFallbackOpts, timeoutMs: number,
+): Promise<Cw | null> {
+  const apiKey = opts.openaiApiKey ?? openAiApiKeyFromEnv()
+  if (!apiKey) return null // no key ⇒ never attempted, not a failure
+  if (opts.telemetry) opts.telemetry.fallbackAttempted = true
+  const caller = opts.openaiCaller ?? callOpenAiVisionJson
+  const model = opts.openaiModel ?? openAiVisionModelFromEnv()
+  const text = await caller(prompt, imageBuffer, apiKey, model, timeoutMs)
+  if (!text) {
+    if (opts.telemetry) opts.telemetry.fallbackErrorCode = opts.telemetry.fallbackErrorCode ?? 'network_or_http_error'
+    return null
+  }
+  if (opts.telemetry) opts.telemetry.anyResponseReceived = true
+  let pos: unknown = null
+  try { pos = JSON.parse(text)?.pos } catch {
+    if (opts.telemetry) opts.telemetry.fallbackErrorCode = opts.telemetry.fallbackErrorCode ?? 'invalid_json'
+    return null
+  }
+  const cw = positionToCorrectionCw(pos)
+  if (cw === null) {
+    if (opts.telemetry) opts.telemetry.fallbackErrorCode = opts.telemetry.fallbackErrorCode ?? 'unrecognized_position'
+  } else if (opts.telemetry) {
+    opts.telemetry.fallbackSucceeded = true
+    opts.telemetry.angle = cw
+  }
+  return cw
+}
+
+async function fallbackSideViaOpenAi(
+  imageBuffer: Buffer, prompt: string, opts: OpenAiFallbackOpts, timeoutMs: number,
+): Promise<'left' | 'right' | null> {
+  const apiKey = opts.openaiApiKey ?? openAiApiKeyFromEnv()
+  if (!apiKey) return null
+  if (opts.telemetry) opts.telemetry.fallbackAttempted = true
+  const caller = opts.openaiCaller ?? callOpenAiVisionJson
+  const model = opts.openaiModel ?? openAiVisionModelFromEnv()
+  const text = await caller(prompt, imageBuffer, apiKey, model, timeoutMs)
+  if (!text) {
+    if (opts.telemetry) opts.telemetry.fallbackErrorCode = opts.telemetry.fallbackErrorCode ?? 'network_or_http_error'
+    return null
+  }
+  if (opts.telemetry) opts.telemetry.anyResponseReceived = true
+  let side: unknown = null
+  try { side = JSON.parse(text)?.side } catch { return null }
+  return normalizeSide(side)
+}
+
 /** Grid cell → the clockwise rotation rendered in that cell (= the correction if that cell is upright). */
 const CELLS: Array<{ pos: string; cw: Cw }> = [
   { pos: 'top-left', cw: 0 },
@@ -49,6 +267,16 @@ export function positionToCorrectionCw(pos: unknown): Cw | null {
   if (typeof pos !== 'string') return null
   const cell = CELLS.find((c) => c.pos === pos.trim().toLowerCase())
   return cell ? cell.cw : null
+}
+
+/** Normalize a model's {"side":...} answer the same way positionToCorrectionCw normalizes
+ *  {"pos":...} — case/whitespace should never cause a silent null (found live 2026-07-06:
+ *  a successful, non-erroring Gemini call still fell through to null here because this sibling
+ *  parser did a bare strict-equals with no trim/lowercase). */
+export function normalizeSide(side: unknown): 'left' | 'right' | null {
+  if (typeof side !== 'string') return null
+  const s = side.trim().toLowerCase()
+  return s === 'left' || s === 'right' ? s : null
 }
 
 function buildDocOrientationHint(docTypeId?: string | null): string {
@@ -125,37 +353,76 @@ export async function detectUprightCw(
   apiKey: string,
   model: string,
   timeoutMs = 20_000,
-  opts: { docTypeId?: string | null } = {},
+  opts: { docTypeId?: string | null } & OpenAiFallbackOpts = {},
 ): Promise<Cw | null> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  const prompt = buildOrientationPrompt(opts.docTypeId)
+  let grid: Buffer
   try {
-    const grid = await buildOrientationGrid(buffer)
+    grid = await buildOrientationGrid(buffer)
+  } catch {
+    clearTimeout(timer)
+    return null
+  }
+  // TRUTHFULNESS FIX: an empty/missing Gemini key is NOT a "primary attempt that failed" — it is
+  // no attempt at all. Skip straight to the fallback (which itself no-ops honestly if OpenAI is
+  // also unavailable) instead of wasting a doomed fetch and mislabeling the outcome.
+  if (!apiKey) {
+    clearTimeout(timer)
+    return await fallbackPosViaOpenAi(grid, prompt, opts, timeoutMs)
+  }
+  if (opts.telemetry) opts.telemetry.primaryAttempted = true
+  try {
     const gridB64 = grid.toString('base64')
+    const gridSha256 = sha256Hex(gridB64)
+    const requestSha = sha256Hex(prompt)
     const cacheKeySha = computeCacheKeySha({
-      fileSha256: sha256Hex(gridB64), provider: 'gemini', model,
-      promptVersion: 'orient_grid_v1', preprocVersion: 'grid2x2_v1',
+      fileSha256: gridSha256, provider: 'gemini', model,
+      promptVersion: 'orient_grid_v1', preprocVersion: 'grid2x2_v1', requestSha,
     })
     const res = await withOcrCostMetrics(
       {
         product: 'ocr', route: 'provider:gemini_orient_grid', provider: 'gemini',
         model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros('gemini', model),
+        // Gateway (dedup/budget; cache substitution stays a no-op until a codec is added —
+        // task #73 note: matches every other provider call site in this codebase today, none
+        // of which supply one either). No-op pass-through until an OCR_* flag is turned on.
+        gateway: {
+          fileSha256: gridSha256, promptVersion: 'orient_grid_v1',
+          preprocVersion: 'grid2x2_v1', requestSha,
+        },
       },
       () => fetch(GEMINI_URL(model, apiKey), {
         method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: buildOrientationPrompt(opts.docTypeId) }, { inline_data: { mime_type: 'image/jpeg', data: gridB64 } }] }],
+          contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: gridB64 } }] }],
           generationConfig: { temperature: 0, response_mime_type: 'application/json' },
         }),
       }),
     )
-    if (!res.ok) return null
+    if (!res.ok) {
+      if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? (res.status >= 500 ? 'http_5xx' : 'http_4xx')
+      return await fallbackPosViaOpenAi(grid, prompt, opts, timeoutMs)
+    }
     const j = await res.json()
     let pos: unknown = null
-    try { pos = JSON.parse(j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}')?.pos } catch { return null }
-    return positionToCorrectionCw(pos)
+    try { pos = JSON.parse(j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}')?.pos } catch {
+      if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? 'invalid_json'
+      return await fallbackPosViaOpenAi(grid, prompt, opts, timeoutMs)
+    }
+    if (opts.telemetry) opts.telemetry.anyResponseReceived = true
+    const cw = positionToCorrectionCw(pos)
+    if (cw === null) {
+      if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? 'unrecognized_position'
+    } else if (opts.telemetry) {
+      opts.telemetry.primarySucceeded = true
+      opts.telemetry.angle = cw
+    }
+    return cw
   } catch {
-    return null
+    if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? 'network_error'
+    return await fallbackPosViaOpenAi(grid, prompt, opts, timeoutMs)
   } finally {
     clearTimeout(timer)
   }
@@ -174,7 +441,51 @@ export interface OsdOrientation {
   scriptConfidence?: number | null
 }
 
+/**
+ * INCIDENT GUARD (2026-07-08, T1.1 real-doc testing): tesseract.js's Node worker cannot run on
+ * Vercel's serverless build — the platform's file-tracing does not bundle
+ * `tesseract.js`'s worker-thread script, so `createWorker`/`.detect()` fails with
+ * `Cannot find module '.../worker-script/node/index.js'` as an UNCAUGHT EXCEPTION (not a
+ * rejected promise — the try/catch below does NOT catch it, confirmed live: a real Preview
+ * request hung until the platform's maxDuration killed it, 504 FUNCTION_INVOCATION_TIMEOUT at
+ * ~120-245s, with the crash happening ~674ms into the request, long before any Gemini call).
+ * This predates the 2026-07-07 orientation-truthfulness fix (verified via `git show 862a18e~1`)
+ * — it was always broken on Vercel, just never previously exercised end-to-end against a real
+ * deployment with a real document.
+ *
+ * FIX: never invoke tesseract.js in an environment where its worker script cannot load. `VERCEL`
+ * is set by the platform on every deployment (Preview AND Production — same build, same bug), so
+ * default OFF there. `TESSERACT_OSD_ENABLED` is an explicit escape hatch for once the bundling
+ * gap is actually fixed (e.g. via next.config `outputFileTracingIncludes`) — until proven fixed
+ * on a live deployment, do not flip it.
+ *
+ * TRUTHFULNESS: this is honest by construction, not a new claim to guard. OSD is one advisory
+ * signal `detectUprightCwVotedMeta` folds into its vote — it already treats a null OSD result
+ * (previously: "OSD failed/unavailable") as "fall through to the Gemini/OpenAI vote", never as
+ * "upright". Skipping it here produces the exact same `null`, so no telemetry field changes
+ * meaning — `OrientationTelemetry` never claimed anything about tesseract specifically.
+ */
+export function isTesseractOsdRuntimeSafe(env: Record<string, string | undefined> = process.env): boolean {
+  if (env.TESSERACT_OSD_ENABLED === '1') return true
+  if (env.TESSERACT_OSD_ENABLED === '0') return false
+  return env.VERCEL !== '1'
+}
+
 async function detectTesseractOrientation(buffer: Buffer): Promise<OsdOrientation | null> {
+  if (!isTesseractOsdRuntimeSafe()) return null
+  // GUARD (found 2026-07-07 while fixing orientation truthfulness): tesseract.js's native worker
+  // can fail on an undecodable buffer via an UNCAUGHT worker 'error' event rather than a rejected
+  // promise — a try/catch around `api.detect()` does NOT catch it, crashing the process. This
+  // never surfaced before because the caller only reached here when a real Gemini key was also
+  // present; now that orientToUpright() always runs (the truthfulness fix), any caller passing a
+  // non-image placeholder buffer (several existing unit tests use `Buffer.from('x')`) would hit
+  // it. Sanity-check the buffer is actually decodable BEFORE handing it to tesseract; sharp is a
+  // JS-level, catchable failure for the same class of bad input.
+  try {
+    await sharp(buffer).metadata()
+  } catch {
+    return null
+  }
   try {
     const mod = await import('tesseract.js')
     const api = ((mod as { default?: { detect?: (image: Buffer) => Promise<any> } }).default ?? mod) as {
@@ -195,15 +506,32 @@ async function detectTesseractOrientation(buffer: Buffer): Promise<OsdOrientatio
   }
 }
 
+/** Reject an OSD reading whose script call confidently names a non-Cyrillic script (e.g. it
+ *  misread mixed print+cursive Cyrillic as "Japanese"/"Katakana"). No script field ⇒ don't
+ *  reject (older/mocked detectors omit it; this must stay permissive for those). */
+function isPlausibleOsdScript(osd: OsdOrientation | null): boolean {
+  if (!osd || typeof osd.script !== 'string') return true
+  return /cyrillic/i.test(osd.script)
+}
+
 async function confirmUprightByOsdCandidates(
   buffer: Buffer,
   detector: (b: Buffer) => Promise<OsdOrientation | null>,
 ): Promise<Cw | null> {
   const zeroCandidates: Array<{ cw: Cw; confidence: number }> = []
   for (const cw of [0, 90, 180, 270] as const) {
-    const candidate = cw === 0 ? buffer : await sharp(buffer).rotate(cw).toBuffer()
+    // GUARD (2026-07-07, orientation truthfulness fix): an undecodable buffer makes sharp throw
+    // here (not just tesseract) — this branch now runs unconditionally whenever a caller reaches
+    // it (previously shielded by the removed outer Gemini-key gate), so it must fail closed itself
+    // instead of relying on the caller to have pre-validated the image.
+    let candidate: Buffer
+    try {
+      candidate = cw === 0 ? buffer : await sharp(buffer).rotate(cw).toBuffer()
+    } catch {
+      continue
+    }
     const detected = await detector(candidate)
-    if (detected?.cw === 0 && typeof detected.confidence === 'number') {
+    if (detected?.cw === 0 && typeof detected.confidence === 'number' && isPlausibleOsdScript(detected)) {
       zeroCandidates.push({ cw, confidence: detected.confidence })
     }
   }
@@ -241,10 +569,13 @@ export async function detectUprightCwVotedMeta(
     sparseScorer?: (b: Buffer) => Promise<number>
     layoutScorer?: (b: Buffer) => Promise<LayoutScore[]>
     osdDetector?: (b: Buffer) => Promise<OsdOrientation | null>
+    /** Guardrail #1: raw accumulator only orientation functions may write to. */
+    telemetry?: RawOrientTelemetry
   } = {},
 ): Promise<OrientVoteMeta> {
   const runs = opts.runs ?? orientVoteRuns()
-  const sample = opts.sampler ?? ((b: Buffer) => detectUprightCw(b, apiKey, model, 20_000, { docTypeId: opts.docTypeId }))
+  const telemetry = opts.telemetry
+  const sample = opts.sampler ?? ((b: Buffer) => detectUprightCw(b, apiKey, model, 20_000, { docTypeId: opts.docTypeId, telemetry }))
   const sparseScorer = opts.sparseScorer ?? ((b: Buffer) => scoreSparseLayout(b, 0.15))
   const layoutScorer = opts.layoutScorer ?? ((b: Buffer) => scoreHandwrittenLayout(b, 0.15))
   const osdDetector = opts.osdDetector ?? detectTesseractOrientation
@@ -271,9 +602,20 @@ export async function detectUprightCwVotedMeta(
   if (runs <= 1) {
     const single = await sample(buffer)
     if (!handwritten) return { cw: single, layoutBackstopUsed: null }
-    const adjacent90 = await confirmUprightVsAdjacent90(buffer, apiKey, model, 20_000, { docTypeId: opts.docTypeId, osdDetector })
+    // BUG FIX (2026-07-06, live-verified on the reference handwritten birth cert with the Gemini
+    // primary forced unavailable): this confirm must compare the buffer AT THE VOTE'S CHOSEN
+    // ROTATION against that +90 — it was comparing the RAW, un-rotated buffer against raw+90
+    // regardless of what the vote said. For a document needing a large correction (e.g. 270°),
+    // NEITHER raw (0°) nor raw+90 (90°) is upright, so the model's answer to that comparison is
+    // noise that can silently overwrite an already-correct vote (reproduced: votes correctly
+    // folded to 270, this check then flipped it to (270+90)%360=0 — a fully wrong, unrotated
+    // output). Rotating the buffer to the vote's guess first makes the comparison meaningful again
+    // ("is my current guess upright, or is guess+90 upright") and matches what the return value
+    // arithmetic below already assumed.
+    const singleRotated = single !== null && single !== 0 ? await sharp(buffer).rotate(single).toBuffer() : buffer
+    const adjacent90 = await confirmUprightVsAdjacent90(singleRotated, apiKey, model, 20_000, { docTypeId: opts.docTypeId, osdDetector, telemetry })
     if (adjacent90 === 'candidate') return { cw: single, layoutBackstopUsed: null }
-    if (adjacent90 === 'flipped') return { cw: ((single ?? 0) + 90) as Cw, layoutBackstopUsed: null }
+    if (adjacent90 === 'flipped') return { cw: (((single ?? 0) + 90) % 360) as Cw, layoutBackstopUsed: null }
     if (!handwrittenLayoutBackstop) return { cw: null, layoutBackstopUsed: null }
     const layoutScores = await layoutScorer(buffer).catch(() => [])
     return { cw: chooseHandwrittenLayoutRotation(layoutScores, single), layoutBackstopUsed: 'handwritten_layout' }
@@ -285,7 +627,9 @@ export async function detectUprightCwVotedMeta(
   }
   const folded = foldOrientationVotes(votes, runs)
   if (handwritten) {
-    const adjacent90 = await confirmUprightVsAdjacent90(buffer, apiKey, model, 20_000, { docTypeId: opts.docTypeId, osdDetector })
+    // Same fix as the runs<=1 branch above: rotate to the vote's guess before confirming.
+    const foldedRotated = folded !== null && folded !== 0 ? await sharp(buffer).rotate(folded).toBuffer() : buffer
+    const adjacent90 = await confirmUprightVsAdjacent90(foldedRotated, apiKey, model, 20_000, { docTypeId: opts.docTypeId, osdDetector, telemetry })
     if (adjacent90 === 'candidate') return { cw: folded, layoutBackstopUsed: null }
     if (adjacent90 === 'flipped') {
       const base = folded ?? 0
@@ -357,6 +701,10 @@ export interface OrientResult {
   disambiguated90?: boolean
   /** Which layout backstop, if any, settled the orientation decision. */
   layoutBackstopUsed?: 'handwritten_layout' | 'sparse_layout'
+  /** Truthful, normalized account of what the Gemini/OpenAI provider layer actually did — see
+   *  `normalizeOrientationTelemetry`. `detected` above already covers OSD/layout-backstop
+   *  resolutions too; this field is specifically about the LLM provider layer. */
+  orientationTelemetry: OrientationTelemetry
 }
 
 interface OrientVoteMeta {
@@ -545,14 +893,14 @@ export async function buildAdjacent90Grid(buffer: Buffer, cellPx = 640, padPx = 
  */
 export async function confirmUprightVsAdjacent90(
   buffer: Buffer, apiKey: string, model: string, timeoutMs = 20_000,
-  opts: { docTypeId?: string | null; osdDetector?: (b: Buffer) => Promise<OsdOrientation | null> } = {},
+  opts: { docTypeId?: string | null; osdDetector?: (b: Buffer) => Promise<OsdOrientation | null> } & OpenAiFallbackOpts = {},
 ): Promise<'candidate' | 'flipped' | null> {
   const osdDetector = opts.osdDetector ?? detectTesseractOrientation
   try {
     const candidate = await osdDetector(buffer).catch(() => null)
     const flipped = await osdDetector(await sharp(buffer).rotate(90).toBuffer()).catch(() => null)
-    const candidateUpright = candidate?.cw === 0 && typeof candidate.confidence === 'number'
-    const flippedUpright = flipped?.cw === 0 && typeof flipped.confidence === 'number'
+    const candidateUpright = candidate?.cw === 0 && typeof candidate.confidence === 'number' && isPlausibleOsdScript(candidate)
+    const flippedUpright = flipped?.cw === 0 && typeof flipped.confidence === 'number' && isPlausibleOsdScript(flipped)
     if (candidateUpright && !flippedUpright) return 'candidate'
     if (flippedUpright && !candidateUpright) return 'flipped'
     if (candidateUpright && flippedUpright) {
@@ -563,50 +911,74 @@ export async function confirmUprightVsAdjacent90(
   } catch {
     // fall through to Gemini confirm
   }
+  const prompt = 'This image shows the SAME document twice, side by side: LEFT is the current ' +
+    'candidate upright pose, RIGHT is that same page rotated 90° clockwise. Exactly ONE ' +
+    'side is upright. Which side is upright? Answer ONLY JSON {"side":"left"|"right"}.' +
+    (() => {
+      const hints = [buildDocOrientationHint(opts.docTypeId), buildRotationBackstopHint(opts.docTypeId)].filter(Boolean)
+      return hints.length ? ` ${hints.join(' ')}` : ''
+    })()
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  let grid: Buffer
   try {
-    const grid = await buildAdjacent90Grid(buffer)
+    grid = await buildAdjacent90Grid(buffer)
+  } catch {
+    clearTimeout(timer)
+    return null
+  }
+  const sideToVerdict = (side: 'left' | 'right' | null): 'candidate' | 'flipped' | null =>
+    side === 'left' ? 'candidate' : side === 'right' ? 'flipped' : null
+  // TRUTHFULNESS FIX: no Gemini key ⇒ no attempt, straight to fallback (see detectUprightCw).
+  if (!apiKey) {
+    clearTimeout(timer)
+    return sideToVerdict(await fallbackSideViaOpenAi(grid, prompt, opts, timeoutMs))
+  }
+  if (opts.telemetry) opts.telemetry.primaryAttempted = true
+  try {
     const gridB64 = grid.toString('base64')
+    const gridSha256 = sha256Hex(gridB64)
+    const requestSha = sha256Hex(prompt)
     const cacheKeySha = computeCacheKeySha({
-      fileSha256: sha256Hex(gridB64), provider: 'gemini', model,
-      promptVersion: 'orient_90_adjacent_v1', preprocVersion: 'grid1x2_adjacent90_v1',
+      fileSha256: gridSha256, provider: 'gemini', model,
+      promptVersion: 'orient_90_adjacent_v1', preprocVersion: 'grid1x2_adjacent90_v1', requestSha,
     })
     const res = await withOcrCostMetrics(
       {
         product: 'ocr', route: 'provider:gemini_orient_90_adjacent', provider: 'gemini',
         model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros('gemini', model),
+        gateway: {
+          fileSha256: gridSha256, promptVersion: 'orient_90_adjacent_v1',
+          preprocVersion: 'grid1x2_adjacent90_v1', requestSha,
+        },
       },
       () => fetch(GEMINI_URL(model, apiKey), {
         method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          contents: [{
-          parts: [
-            {
-              text: 'This image shows the SAME document twice, side by side: LEFT is the current ' +
-                'candidate upright pose, RIGHT is that same page rotated 90° clockwise. Exactly ONE ' +
-                'side is upright. Which side is upright? Answer ONLY JSON {"side":"left"|"right"}.' +
-                (() => {
-                  const hints = [buildDocOrientationHint(opts.docTypeId), buildRotationBackstopHint(opts.docTypeId)].filter(Boolean)
-                  return hints.length ? ` ${hints.join(' ')}` : ''
-                })(),
-            },
-            { inline_data: { mime_type: 'image/jpeg', data: gridB64 } },
-          ],
-        }],
+          contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: gridB64 } }] }],
           generationConfig: { temperature: 0, response_mime_type: 'application/json' },
         }),
       }),
     )
-    if (!res.ok) return null
+    if (!res.ok) {
+      if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? (res.status >= 500 ? 'http_5xx' : 'http_4xx')
+      return sideToVerdict(await fallbackSideViaOpenAi(grid, prompt, opts, timeoutMs))
+    }
     const j = await res.json()
-    let side: unknown = null
-    try { side = JSON.parse(j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}')?.side } catch { return null }
+    let rawSide: unknown = null
+    try { rawSide = JSON.parse(j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}')?.side } catch {
+      if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? 'invalid_json'
+      return sideToVerdict(await fallbackSideViaOpenAi(grid, prompt, opts, timeoutMs))
+    }
+    if (opts.telemetry) opts.telemetry.anyResponseReceived = true
+    const side = normalizeSide(rawSide)
     if (side === 'left') return 'candidate'
     if (side === 'right') return 'flipped'
-    return null
+    if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? 'unrecognized_position'
+    return sideToVerdict(await fallbackSideViaOpenAi(grid, prompt, opts, timeoutMs))
   } catch {
-    return null
+    if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? 'network_error'
+    return sideToVerdict(await fallbackSideViaOpenAi(grid, prompt, opts, timeoutMs))
   } finally {
     clearTimeout(timer)
   }
@@ -619,14 +991,14 @@ export async function confirmUprightVsAdjacent90(
  */
 export async function confirmUprightVs180(
   buffer: Buffer, apiKey: string, model: string, timeoutMs = 20_000,
-  opts: { docTypeId?: string | null; osdDetector?: (b: Buffer) => Promise<OsdOrientation | null> } = {},
+  opts: { docTypeId?: string | null; osdDetector?: (b: Buffer) => Promise<OsdOrientation | null> } & OpenAiFallbackOpts = {},
 ): Promise<'candidate' | 'flipped' | null> {
   const osdDetector = opts.osdDetector ?? detectTesseractOrientation
   try {
     const candidate = await osdDetector(buffer).catch(() => null)
     const flipped = await osdDetector(await sharp(buffer).rotate(180).toBuffer()).catch(() => null)
-    const candidateUpright = candidate?.cw === 0 && typeof candidate.confidence === 'number'
-    const flippedUpright = flipped?.cw === 0 && typeof flipped.confidence === 'number'
+    const candidateUpright = candidate?.cw === 0 && typeof candidate.confidence === 'number' && isPlausibleOsdScript(candidate)
+    const flippedUpright = flipped?.cw === 0 && typeof flipped.confidence === 'number' && isPlausibleOsdScript(flipped)
     if (candidateUpright && !flippedUpright) return 'candidate'
     if (flippedUpright && !candidateUpright) return 'flipped'
     if (candidateUpright && flippedUpright) {
@@ -637,37 +1009,68 @@ export async function confirmUprightVs180(
   } catch {
     // fall through to Gemini confirm
   }
+  const prompt = build180Prompt(opts.docTypeId)
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  let grid: Buffer
   try {
-    const grid = await build180Grid(buffer)
+    grid = await build180Grid(buffer)
+  } catch {
+    clearTimeout(timer)
+    return null
+  }
+  const sideToVerdict = (side: 'left' | 'right' | null): 'candidate' | 'flipped' | null =>
+    side === 'left' ? 'candidate' : side === 'right' ? 'flipped' : null
+  // TRUTHFULNESS FIX: no Gemini key ⇒ no attempt, straight to fallback (see detectUprightCw).
+  if (!apiKey) {
+    clearTimeout(timer)
+    return sideToVerdict(await fallbackSideViaOpenAi(grid, prompt, opts, timeoutMs))
+  }
+  if (opts.telemetry) opts.telemetry.primaryAttempted = true
+  try {
     const gridB64 = grid.toString('base64')
+    const gridSha256 = sha256Hex(gridB64)
+    const requestSha = sha256Hex(prompt)
     const cacheKeySha = computeCacheKeySha({
-      fileSha256: sha256Hex(gridB64), provider: 'gemini', model,
-      promptVersion: 'orient_180_v1', preprocVersion: 'grid1x2_v1',
+      fileSha256: gridSha256, provider: 'gemini', model,
+      promptVersion: 'orient_180_v1', preprocVersion: 'grid1x2_v1', requestSha,
     })
     const res = await withOcrCostMetrics(
       {
         product: 'ocr', route: 'provider:gemini_orient_180', provider: 'gemini',
         model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros('gemini', model),
+        gateway: {
+          fileSha256: gridSha256, promptVersion: 'orient_180_v1',
+          preprocVersion: 'grid1x2_v1', requestSha,
+        },
       },
       () => fetch(GEMINI_URL(model, apiKey), {
         method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: build180Prompt(opts.docTypeId) }, { inline_data: { mime_type: 'image/jpeg', data: gridB64 } }] }],
+          contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: gridB64 } }] }],
           generationConfig: { temperature: 0, response_mime_type: 'application/json' },
         }),
       }),
     )
-    if (!res.ok) return null
+    if (!res.ok) {
+      if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? (res.status >= 500 ? 'http_5xx' : 'http_4xx')
+      return sideToVerdict(await fallbackSideViaOpenAi(grid, prompt, opts, timeoutMs))
+    }
     const j = await res.json()
-    let side: unknown = null
-    try { side = JSON.parse(j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}')?.side } catch { return null }
+    let rawSide: unknown = null
+    try { rawSide = JSON.parse(j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}')?.side } catch {
+      if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? 'invalid_json'
+      return sideToVerdict(await fallbackSideViaOpenAi(grid, prompt, opts, timeoutMs))
+    }
+    if (opts.telemetry) opts.telemetry.anyResponseReceived = true
+    const side = normalizeSide(rawSide)
     if (side === 'left') return 'candidate'
     if (side === 'right') return 'flipped'
-    return null
+    if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? 'unrecognized_position'
+    return sideToVerdict(await fallbackSideViaOpenAi(grid, prompt, opts, timeoutMs))
   } catch {
-    return null
+    if (opts.telemetry) opts.telemetry.primaryErrorCode = opts.telemetry.primaryErrorCode ?? 'network_error'
+    return sideToVerdict(await fallbackSideViaOpenAi(grid, prompt, opts, timeoutMs))
   } finally {
     clearTimeout(timer)
   }
@@ -687,9 +1090,18 @@ export async function orientToUpright(
   buffer: Buffer, apiKey: string, model: string,
   opts: { docTypeId?: string | null } = {},
 ): Promise<OrientResult> {
-  const vote = await detectUprightCwVotedMeta(buffer, apiKey, model, { docTypeId: opts.docTypeId })
+  // Guardrail #1: this is the ONE raw accumulator for the whole read; every orientation function
+  // called below (the vote, and both binary confirms) writes into the SAME object. Guardrail #2:
+  // `orientToUpright` always normalizes with enabled=true (it only ever runs when a caller decided
+  // to enable it); the caller is responsible for representing the flag-OFF ('disabled') case
+  // itself, via the same `normalizeOrientationTelemetry` function, without calling this one.
+  const telemetry = newRawOrientTelemetry()
+  const finish = (r: Omit<OrientResult, 'orientationTelemetry'>): OrientResult =>
+    ({ ...r, orientationTelemetry: normalizeOrientationTelemetry(telemetry, true) })
+
+  const vote = await detectUprightCwVotedMeta(buffer, apiKey, model, { docTypeId: opts.docTypeId, telemetry })
   const cw = vote.cw
-  if (cw === null) return { buffer, applied: 0, detected: false }
+  if (cw === null) return finish({ buffer, applied: 0, detected: false })
 
   let out = buffer
   let applied: Cw = 0
@@ -698,7 +1110,7 @@ export async function orientToUpright(
       out = await sharp(buffer).rotate(cw).toBuffer()
       applied = cw
     } catch {
-      return { buffer, applied: 0, detected: false }
+      return finish({ buffer, applied: 0, detected: false })
     }
   }
 
@@ -716,7 +1128,7 @@ export async function orientToUpright(
         applied = 270
       }
     } else {
-      const confirm90 = await confirmUprightVsAdjacent90(out, apiKey, model, 20_000, { docTypeId: opts.docTypeId })
+      const confirm90 = await confirmUprightVsAdjacent90(out, apiKey, model, 20_000, { docTypeId: opts.docTypeId, telemetry })
       if (confirm90 === 'candidate') {
         disambiguated90 = true
       } else if (confirm90 === 'flipped') {
@@ -725,33 +1137,33 @@ export async function orientToUpright(
           applied = 270
           disambiguated90 = true
         } catch {
-          return { buffer: out, applied, detected: true, disambiguated90: true, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) }
+          return finish({ buffer: out, applied, detected: true, disambiguated90: true, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) })
         }
       } else {
         // Adjunct could not decide between the current pose and its 90° neighbour.
         // Keep the base detector's decision; do not discard an already-applied pose.
-        return { buffer: out, applied, detected: true, disambiguated90: true, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) }
+        return finish({ buffer: out, applied, detected: true, disambiguated90: true, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) })
       }
     }
   }
 
   const run180Check = isOrient180CheckEnabled() || isHandwrittenDocType(opts.docTypeId)
-  if (!run180Check) return { buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) }
+  if (!run180Check) return finish({ buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) })
 
-  const confirm = await confirmUprightVs180(out, apiKey, model, 20_000, { docTypeId: opts.docTypeId })
-  if (confirm === 'candidate') return { buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) }
+  const confirm = await confirmUprightVs180(out, apiKey, model, 20_000, { docTypeId: opts.docTypeId, telemetry })
+  if (confirm === 'candidate') return finish({ buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) })
   if (confirm === 'flipped') {
     try {
       const fixed = await sharp(out).rotate(180).toBuffer()
       const newApplied = ((applied + 180) % 360) as Cw
-      return { buffer: fixed, applied: newApplied, detected: true, disambiguated180: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) }
+      return finish({ buffer: fixed, applied: newApplied, detected: true, disambiguated180: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) })
     } catch {
-      return { buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) }
+      return finish({ buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) })
     }
   }
   // Adjunct undecidable: preserve the base detector's decision instead of discarding it.
   // The adjunct is a refinement, not a replacement for the underlying pose vote.
-  return { buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) }
+  return finish({ buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) })
 }
 
 /** Flag: content-based orientation correction (default OFF — measured before enabling). */

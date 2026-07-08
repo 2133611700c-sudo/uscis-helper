@@ -30,6 +30,7 @@ import type { FieldKind } from '../types'
  */
 const CERTIFICATE_DOC_TYPES = [
   'ua_birth_certificate',
+  'ua_birth_certificate_soviet',
   'ua_marriage_certificate',
   'ua_divorce_certificate',
   'ua_death_certificate',

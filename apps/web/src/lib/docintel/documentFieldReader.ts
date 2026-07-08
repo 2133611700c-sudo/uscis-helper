@@ -17,7 +17,10 @@ import { defaultVisionProvider, primaryGeminiModel } from './providers/geminiVis
 import { OpenAIVisionProvider } from './providers/openaiVisionProvider'
 import { getGeminiApiKey, getGeminiKeyProvenance } from '@/lib/gemini/apiKey'
 import { autoOrient } from './orientation/autoOrient'
-import { orientToUpright, isContentOrientEnabled } from './orientation/detectOrientation'
+import {
+  orientToUpright, isContentOrientEnabled, normalizeOrientationTelemetry, newRawOrientTelemetry,
+  type OrientationTelemetry,
+} from './orientation/detectOrientation'
 import {
   recoverEmptyFieldsByTiles, geminiReadFieldsFromCrop, isHiResTileRecoverEnabled, isEmptyField,
 } from './ensemble/tileRegionRead'
@@ -75,7 +78,15 @@ export function selectDefaultVisionProvider(docTypeId?: string | null): VisionPr
   // stay on the default reader path even when the operator enables READER_PROVIDER=openai:
   // live benches proved GPT vision is unstable/fabricating there, so widening the
   // override to those families would lower safety rather than improve availability.
-  if ((process.env.READER_PROVIDER || '').toLowerCase() === 'openai' && !isHandwrittenFamily(docTypeId)) {
+  //
+  // TEST-ONLY opt-in (2026-07-08): READER_PROVIDER_FORCE_HANDWRITTEN='1' additionally routes
+  // HANDWRITTEN families through GPT too — for the explicit owner-requested measurement of
+  // whether GPT can read handwritten Cyrillic (it is expected to fabricate per ADR-026; this
+  // flag exists to MEASURE that, not to ship it). Default unset = handwritten stays on the
+  // default reader (no behavior change). Every GPT read is still force-reviewed (ADR-018).
+  const openaiRequested = (process.env.READER_PROVIDER || '').toLowerCase() === 'openai'
+  const forceHandwritten = process.env.READER_PROVIDER_FORCE_HANDWRITTEN === '1'
+  if (openaiRequested && (forceHandwritten || !isHandwrittenFamily(docTypeId))) {
     return new OpenAIVisionProvider()
   }
   return defaultVisionProvider
@@ -140,22 +151,34 @@ export async function readDocument(
   let disambiguated90 = false
   let layoutBackstopUsed: 'handwritten_layout' | 'sparse_layout' | null = null
   let documentFit: 'full_page_visible' | 'cropped_or_partial' | 'manual_crop' | 'unknown' | 'not_measured' = 'not_measured'
+  // TRUTHFULNESS FIX (2026-07-07, One Brain priority #1): this block used to be gated a SECOND
+  // time on `if (apiKey)` — when the Gemini key was missing, orientToUpright() was never even
+  // CALLED, yet `contentOrientRan: isContentOrientEnabled()` below still reported `true`, so the
+  // posture envelope claimed `orientation_status: 'upright'` for a document that was never
+  // actually checked (violates this codebase's own law: never claim measured when it is not).
+  // Fixed at the root: orientToUpright() is now ALWAYS called once the FLAG is on, passing the
+  // Gemini key AS-IS (possibly '') — the function itself fails closed through OSD → OpenAI
+  // fallback → honest non-measurement, and reports exactly what happened via `orientationTelemetry`
+  // (see detectOrientation.ts's `normalizeOrientationTelemetry`). This is also a functional
+  // improvement, not just an honesty one: OSD (tesseract, needs no key) now gets a chance to run
+  // even when Gemini is unavailable, instead of being skipped along with everything else.
+  let orientationTelemetry: OrientationTelemetry = normalizeOrientationTelemetry(newRawOrientTelemetry(), false)
   if (isContentOrientEnabled()) {
     const apiKey = getGeminiApiKey()
-    if (apiKey) {
-      const oriented = await orientToUpright(imageBuffer, apiKey, primaryGeminiModel(), { docTypeId })
-      imageBuffer = oriented.buffer
-      orientApplied = oriented.applied
-      orientationUncertain = !oriented.detected   // Step-5: undecidable orientation → fail-closed downstream
-      disambiguated180 = oriented.disambiguated180 === true
-      disambiguated90 = oriented.disambiguated90 === true
-      layoutBackstopUsed = oriented.layoutBackstopUsed ?? null
-      if (orientApplied) console.info('[content_orient] rotated', JSON.stringify({ doc_type_id: docTypeId, cw: orientApplied }))
-      if (orientationUncertain) console.warn('[content_orient] detection_undecidable', JSON.stringify({ doc_type_id: docTypeId }))
-      if (disambiguated180) console.info('[content_orient] disambiguated_180', JSON.stringify({ doc_type_id: docTypeId }))
-      if (disambiguated90) console.info('[content_orient] disambiguated_90', JSON.stringify({ doc_type_id: docTypeId }))
-      if (layoutBackstopUsed) console.info('[content_orient] layout_backstop_used', JSON.stringify({ doc_type_id: docTypeId, layout_backstop_used: layoutBackstopUsed }))
-    }
+    const oriented = await orientToUpright(imageBuffer, apiKey, primaryGeminiModel(), { docTypeId })
+    imageBuffer = oriented.buffer
+    orientApplied = oriented.applied
+    orientationUncertain = !oriented.detected   // Step-5: undecidable orientation → fail-closed downstream
+    disambiguated180 = oriented.disambiguated180 === true
+    disambiguated90 = oriented.disambiguated90 === true
+    layoutBackstopUsed = oriented.layoutBackstopUsed ?? null
+    orientationTelemetry = oriented.orientationTelemetry
+    if (orientApplied) console.info('[content_orient] rotated', JSON.stringify({ doc_type_id: docTypeId, cw: orientApplied }))
+    if (orientationUncertain) console.warn('[content_orient] detection_undecidable', JSON.stringify({ doc_type_id: docTypeId }))
+    if (disambiguated180) console.info('[content_orient] disambiguated_180', JSON.stringify({ doc_type_id: docTypeId }))
+    if (disambiguated90) console.info('[content_orient] disambiguated_90', JSON.stringify({ doc_type_id: docTypeId }))
+    if (layoutBackstopUsed) console.info('[content_orient] layout_backstop_used', JSON.stringify({ doc_type_id: docTypeId, layout_backstop_used: layoutBackstopUsed }))
+    console.info('[orientation_telemetry]', JSON.stringify({ doc_type_id: docTypeId, ...orientationTelemetry }))
   } else if (process.env.AUTO_ORIENT_ENABLED === '1') {
     // Legacy iterative detector (deprecated — kept for rollback; see detectOrientation.ts for why).
     const apiKey = getGeminiApiKey()
@@ -182,6 +205,7 @@ export async function readDocument(
     contentOrientRan: isContentOrientEnabled(),
     contentRotationCw: orientApplied,
     orientationUncertain,
+    orientationTelemetry,
     disambiguated180,
     disambiguated90,
     layoutBackstopUsed,
@@ -299,7 +323,7 @@ export async function readDocument(
     // FIELD-FIRST INDEPENDENCE (ADR-026): even when the LLM full-page read FAILED, a HANDWRITTEN doc can
     // still be read field-first by the HTR sidecar (the LLM read is not a prerequisite). If the HTR stage
     // produces any handwritten name field, return those (review-gated) instead of an empty vision_failed.
-    const htrOnly = await runHtrFieldStage([], spec, docTypeId, opts.originalBuffer, mimeType, provider.name)
+    const htrOnly = await runHtrFieldStage([], spec, docTypeId, opts.originalBuffer, mimeType, provider.name, orientApplied)
     if (htrOnly.ran && htrOnly.produced > 0) {
       const st = `htr_only:${htrOnly.produced}f:llm_${read.error ?? 'failed'}`
       recordForensic(read.model, read.ms, st, read.error ?? null, htrOnly.fields)
@@ -648,7 +672,7 @@ export async function readDocument(
   // HTR sidecar is unavailable / returns empty / low-confidence for a CRITICAL HANDWRITTEN name field, the value
   // is NULLED (not left as the LLM read) → C3 yields final_value=null + review_required=true → USCIS autofill
   // blocked. We never silently fall back to the weaker LLM read on a critical handwritten field.
-  finalFields = (await runHtrFieldStage(finalFields, spec, docTypeId, opts.originalBuffer, mimeType, provider.name)).fields
+  finalFields = (await runHtrFieldStage(finalFields, spec, docTypeId, opts.originalBuffer, mimeType, provider.name, orientApplied)).fields
 
   // AUDIT FIX (2026-07-06): the status/forensic field count was frozen at the raw provider
   // read (`fields.length`), taken BEFORE hi-res tile recovery, known-values fill, and the HTR
@@ -676,6 +700,25 @@ function isHandwritten(spec: ReturnType<typeof getDocTypeSpec>, field: string): 
  * array + the count filled. This runs BEFORE the paid tile recovery so Gemini is spent only on the
  * fields that are still genuinely unknown (cost-efficiency-first).
  */
+/**
+ * Maps FIELD_BOX_TEMPLATES' generic box keys ('family_name'/'given_name'/'patronymic') to the
+ * ACTUAL registry field key for doc types whose primary-subject name fields are prefixed
+ * differently (e.g. ua_birth_certificate's 'child_family_name'). Doc types not listed here use the
+ * bare keys as-is (e.g. ua_internal_passport_booklet, whose registry already uses bare keys —
+ * this is the doc type the HTR route was originally built and tuned against).
+ */
+const HTR_FIELD_KEY_ALIASES: Record<string, Record<string, string>> = {
+  ua_birth_certificate: {
+    family_name: 'child_family_name', given_name: 'child_given_name', patronymic: 'child_patronymic',
+  },
+  // Soviet-era variant (item 5, 2026-07-06): same box keys, same registry key prefix as above.
+  // This map is EXACT-key lookup (unlike FIELD_BOX_TEMPLATES' substring match), so it needs its
+  // own entry even though the aliasing is identical.
+  ua_birth_certificate_soviet: {
+    family_name: 'child_family_name', given_name: 'child_given_name', patronymic: 'child_patronymic',
+  },
+}
+
 /**
  * FAIL-CLOSED HTR field-route merge (pure, testable). For each CRITICAL handwritten name field the HTR route
  * owns: an HTR read above the confidence floor → authoritative raw_cyrillic, LLM Latin cleared, review-gated.
@@ -721,14 +764,30 @@ async function runHtrFieldStage(
   originalBuffer: Buffer | undefined,
   mimeType: string,
   providerName: string,
+  contentOrientCw = 0,
 ): Promise<{ fields: ExtractedDocField[]; ran: boolean; produced: number }> {
   // Crop-route gate: HTR sidecar OR the LLM crop transport (HANDWRITING_CROP_LLM='gemini').
   // Both default OFF → byte-identical; readHandwrittenRoute picks the actual transport.
   if ((!isHtrSidecarEnabled() && !isLlmCropReaderEnabled()) || !isHandwrittenFamily(docTypeId) || !originalBuffer) return { fields, ran: false, produced: 0 }
-  const HTR_NAME_FIELDS = new Set(['family_name', 'given_name', 'patronymic'])
+  // ROOT-CAUSE FIX (2026-07-06, found live-testing birth_cert_handwritten_01.jpg with the sidecar
+  // on): FIELD_BOX_TEMPLATES emits its 3 name reads under the GENERIC box keys
+  // ('family_name'/'given_name'/'patronymic') — correct for doc types whose registry ALSO uses
+  // those bare keys (e.g. ua_internal_passport_booklet), but ua_birth_certificate's registry keys
+  // are 'child_family_name'/'child_given_name'/'child_patronymic'. Before this fix, the merge
+  // below created ORPHAN bare-keyed rows that were never read by any consumer (the real
+  // 'child_family_name' row was left untouched, still holding the LLM's read) — so the HTR route
+  // silently had ZERO effect on birth certificates specifically, even when the sidecar produced
+  // perfect reads (live-verified: raxtemur on this exact document read all three correctly; the
+  // final output still showed the LLM's wrong values because they landed under the wrong key).
+  const htrFieldKeyAlias: Record<string, string> = HTR_FIELD_KEY_ALIASES[docTypeId] ?? {}
+  const resolveHtrKey = (boxKey: string) => htrFieldKeyAlias[boxKey] ?? boxKey
+  const HTR_NAME_FIELDS = new Set(['family_name', 'given_name', 'patronymic'].map(resolveHtrKey))
   const minConf = Number(process.env.HTR_MIN_CONFIDENCE) || 0.5
   let htr: Awaited<ReturnType<typeof readHandwrittenRoute>> = []
-  try { htr = await readHandwrittenRoute(originalBuffer, mimeType, docTypeId) }
+  try {
+    const htrRaw = await readHandwrittenRoute(originalBuffer, mimeType, docTypeId, contentOrientCw)
+    htr = htrRaw.map((h) => ({ ...h, field: resolveHtrKey(h.field) }))
+  }
   catch (e) { console.warn('[htr_field_route] sidecar error → FAIL-CLOSED', e instanceof Error ? e.message : String(e)) }
   // Inside a HANDWRITTEN doc family the person-name fields ARE handwritten by definition (not gated on a
   // per-field flag). Ensure a row exists for each name field (so fail-closed can null it) and read via HTR.
@@ -778,10 +837,77 @@ async function runHtrFieldStage(
       console.warn('[handwriting_ensemble_shadow] failed (ignored):', e instanceof Error ? e.message : String(e))
     }
   }
-  const merged = applyHtrFieldRoute(out, htr, HTR_NAME_FIELDS, HTR_NAME_FIELDS, minConf)
+  let merged = applyHtrFieldRoute(out, htr, HTR_NAME_FIELDS, HTR_NAME_FIELDS, minConf)
+  merged = applyHtrCombinedFields(merged, htr, docTypeId, minConf, kindOf, providerName)
   const produced = merged.filter((f) => HTR_NAME_FIELDS.has(f.field) && (f.raw_cyrillic ?? '').trim() !== '').length
   console.info('[htr_field_route]', JSON.stringify({ doc_type_id: docTypeId, htr_fields: htr.length, produced, fail_closed: true }))
   return { fields: merged, ran: true, produced }
+}
+
+/**
+ * Combines multi-box HTR reads into a SINGLE combined registry field (added 2026-07-06). Some
+ * registry fields (e.g. `father_full_name`) are ONE string covering surname+given+patronymic,
+ * unlike the child's own name (3 separate registry fields) that FIELD_BOX_TEMPLATES/
+ * HTR_NAME_FIELDS were built around. Rather than force these into that 3-field shape, a small
+ * per-doc-type combine table names the box-template parts and where to borrow the surname from
+ * (the sibling name field the merge above has ALREADY corrected, e.g. the child's own surname —
+ * verified true on the reference document that a parent shares the child's registry surname; a
+ * genuine mismatch stays review-gated like every handwritten field, never silently accepted).
+ * Only overwrites the target field when ALL parts are present above the confidence floor —
+ * otherwise the field is left exactly as the main LLM/HTR merge already produced it.
+ */
+const HTR_COMBINE_FIELDS: Record<string, Record<string, { parts: string[]; surnameFrom?: string }>> = {
+  ua_birth_certificate: {
+    father_full_name: { parts: ['father_given_name', 'father_patronymic'], surnameFrom: 'child_family_name' },
+    // Item 2 (2026-07-06): mother_given_patronymic is a SINGLE combined crop (unlike father's two
+    // separate boxes — a two-box split live-tested worse for this row, see the note on
+    // FIELD_BOX_TEMPLATES). One-element `parts` still works with this same merge function.
+    // Surname borrowed from child_family_name (owner-verified) rather than the mother's own
+    // surname crop, which live-tested less reliable (one-letter substitution vs the correct value).
+    mother_full_name: { parts: ['mother_given_patronymic'], surnameFrom: 'child_family_name' },
+  },
+  // Soviet-era variant (item 5, 2026-07-06): identical combine rules, own entry (exact-key lookup).
+  ua_birth_certificate_soviet: {
+    father_full_name: { parts: ['father_given_name', 'father_patronymic'], surnameFrom: 'child_family_name' },
+    mother_full_name: { parts: ['mother_given_patronymic'], surnameFrom: 'child_family_name' },
+  },
+}
+
+function applyHtrCombinedFields(
+  fields: ExtractedDocField[],
+  htr: { field: string; raw_htr_text: string; htr_confidence: number }[],
+  docTypeId: string,
+  minConf: number,
+  kindOf: Map<string, ExtractedDocField['kind']>,
+  providerName: string,
+): ExtractedDocField[] {
+  const combos = HTR_COMBINE_FIELDS[docTypeId]
+  if (!combos) return fields
+  const byField = new Map(htr.map((h) => [h.field, h]))
+  const bySurname = new Map(fields.map((f) => [f.field, f]))
+  let out = fields
+  for (const [target, { parts, surnameFrom }] of Object.entries(combos)) {
+    const reads = parts.map((p) => byField.get(p))
+    if (reads.some((r) => !r || !r.raw_htr_text.trim() || r.htr_confidence < minConf)) continue
+    const surname = surnameFrom ? (bySurname.get(surnameFrom)?.raw_cyrillic ?? '').trim() : ''
+    const combinedText = [surname, ...reads.map((r) => r!.raw_htr_text.trim())].filter(Boolean).join(' ')
+    const combinedConf = Math.min(...reads.map((r) => r!.htr_confidence))
+    const applyCombine = (f: ExtractedDocField): ExtractedDocField => ({
+      ...f, value: '', raw_cyrillic: combinedText, confidence: combinedConf,
+      review_required: true, review_reasons: [...(f.review_reasons ?? []), 'handwritten_htr_combined'],
+    })
+    // Total-LLM-failure early-return path starts from fields=[] — the target row may not exist
+    // yet (it's not one of HTR_NAME_FIELDS, so the earlier wanted-set loop never creates it).
+    if (!out.some((f) => f.field === target)) {
+      out = [...out, applyCombine({
+        field: target, kind: kindOf.get(target) ?? 'name', raw_cyrillic: null, value: null,
+        confidence: 0, review_required: true, source: 'vision', provider: providerName,
+      })]
+    } else {
+      out = out.map((f) => f.field !== target ? f : applyCombine(f))
+    }
+  }
+  return out
 }
 
 export function applyKnownValues(

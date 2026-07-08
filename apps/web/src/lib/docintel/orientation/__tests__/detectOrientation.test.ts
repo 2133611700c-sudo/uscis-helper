@@ -60,6 +60,114 @@ describe('buildOrientationGrid', () => {
   })
 })
 
+describe('OpenAI availability fallback (2026-07-06: added after Gemini was blocked by a ' +
+  'project/key tier limit on birth_cert_handwritten_01.jpg — ADR-018 availability-only, never ' +
+  'primary, never second-guesses a Gemini answer that decoded)', () => {
+  const originalFetch = global.fetch
+  afterEach(() => { global.fetch = originalFetch })
+
+  it('detectUprightCw falls back to OpenAI when the Gemini HTTP call fails', async () => {
+    global.fetch = vi.fn(async () => new Response('{}', { status: 429 })) as unknown as typeof fetch
+    let openaiCalls = 0
+    const out = await detectUprightCw(await testImage(), 'gemini-key', 'gemini-2.5-pro', 5000, {
+      openaiApiKey: 'openai-key',
+      openaiCaller: async () => { openaiCalls++; return '{"pos":"bottom-right"}' },
+    })
+    expect(out).toBe(270)
+    expect(openaiCalls).toBe(1)
+  })
+
+  it('detectUprightCw does not fall back when Gemini answers successfully', async () => {
+    global.fetch = vi.fn(async () => new Response(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }),
+      { status: 200 },
+    )) as unknown as typeof fetch
+    let openaiCalls = 0
+    const out = await detectUprightCw(await testImage(), 'gemini-key', 'gemini-2.5-pro', 5000, {
+      openaiApiKey: 'openai-key',
+      openaiCaller: async () => { openaiCalls++; return '{"pos":"bottom-right"}' },
+    })
+    expect(out).toBe(0)
+    expect(openaiCalls).toBe(0)
+  })
+
+  it('detectUprightCw stays null (fail-open) when no OpenAI key is configured and Gemini fails', async () => {
+    global.fetch = vi.fn(async () => new Response('{}', { status: 429 })) as unknown as typeof fetch
+    const out = await detectUprightCw(await testImage(), 'gemini-key', 'gemini-2.5-pro', 5000, {
+      openaiApiKey: null,
+    })
+    expect(out).toBeNull()
+  })
+
+  it('confirmUprightVsAdjacent90 falls back to OpenAI when Gemini fails', async () => {
+    global.fetch = vi.fn(async () => new Response('{}', { status: 500 })) as unknown as typeof fetch
+    const out = await confirmUprightVsAdjacent90(await testImage(), 'gemini-key', 'gemini-2.5-pro', 5000, {
+      osdDetector: async () => null,
+      openaiApiKey: 'openai-key',
+      openaiCaller: async () => '{"side":"right"}',
+    })
+    expect(out).toBe('flipped')
+  })
+
+  it('confirmUprightVs180 falls back to OpenAI when Gemini fails', async () => {
+    global.fetch = vi.fn(async () => new Response('{}', { status: 500 })) as unknown as typeof fetch
+    const out = await confirmUprightVs180(await testImage(), 'gemini-key', 'gemini-2.5-pro', 5000, {
+      osdDetector: async () => null,
+      openaiApiKey: 'openai-key',
+      openaiCaller: async () => '{"side":"left"}',
+    })
+    expect(out).toBe('candidate')
+  })
+})
+
+describe('ocrGateway wiring (task #73, 2026-07-06: repeat test runs on the same document were ' +
+  're-paying every time because these call sites never passed `gateway` to withOcrCostMetrics ' +
+  '— matched every other provider call site in the codebase, which supplies the same ' +
+  '{fileSha256, promptVersion, preprocVersion, requestSha} shape)', () => {
+  const originalFetch = global.fetch
+  const originalDedup = process.env.OCR_DEDUP_ENABLED
+  afterEach(() => {
+    global.fetch = originalFetch
+    if (originalDedup === undefined) delete process.env.OCR_DEDUP_ENABLED
+    else process.env.OCR_DEDUP_ENABLED = originalDedup
+  })
+
+  it('detectUprightCw stays byte-identical (one fetch per call) with all gateway flags OFF (prod default)', async () => {
+    delete process.env.OCR_DEDUP_ENABLED
+    let fetchCalls = 0
+    global.fetch = vi.fn(async () => {
+      fetchCalls++
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }), { status: 200 })
+    }) as unknown as typeof fetch
+    const img = await testImage()
+    const [a, b] = await Promise.all([
+      detectUprightCw(img, 'gemini-key', 'gemini-2.5-pro', 5000, {}),
+      detectUprightCw(img, 'gemini-key', 'gemini-2.5-pro', 5000, {}),
+    ])
+    expect(a).toBe(0)
+    expect(b).toBe(0)
+    expect(fetchCalls).toBe(2) // no dedup flag ⇒ each call hits the provider independently
+  })
+
+  it('detectUprightCw collapses concurrent identical calls into one provider call when OCR_DEDUP_ENABLED=1', async () => {
+    process.env.OCR_DEDUP_ENABLED = '1'
+    let fetchCalls = 0
+    global.fetch = vi.fn(async () => {
+      fetchCalls++
+      await new Promise((r) => setTimeout(r, 200)) // hold the in-flight window open (generous margin under full-suite CPU load)
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }), { status: 200 })
+    }) as unknown as typeof fetch
+    const img = await testImage()
+    const [a, b] = await Promise.all([
+      detectUprightCw(img, 'gemini-key', 'gemini-2.5-pro', 5000, {}),
+      detectUprightCw(img, 'gemini-key', 'gemini-2.5-pro', 5000, {}),
+    ])
+    expect(a).toBe(0)
+    expect(b).toBe(0)
+    expect(fetchCalls).toBe(1) // identical fileSha256+promptVersion+preprocVersion+requestSha ⇒ single-flight
+  })
+})
+
 describe('orientToUpright — fail-open', () => {
   it('detection failure (fetch throws) ⇒ original buffer, applied 0, detected false', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network') }))
@@ -234,6 +342,34 @@ describe('detectUprightCwVoted (injected sampler)', () => {
     })
     expect(out).toBe(270)
   })
+  it('EYES-FIRST AUDIT (2026-07-06): a confident-looking OSD gap win is rejected when the ' +
+    'script call confidently misreads the page as non-Cyrillic (real bug measured live on ' +
+    'birth_cert_handwritten_01.jpg — tesseract.js called mixed print+cursive Cyrillic ' +
+    '"Japanese"/"Katakana" at every rotation, and confirmUprightByOsdCandidates\' relative-gap ' +
+    'heuristic still "confidently" picked cw=90 from that noise, silently overriding the ' +
+    'proven-correct Gemini-vote cw=270 documented in isContentOrientEnabled()\'s comment)', async () => {
+    let call = 0
+    const out = await detectUprightCwVoted(await testImage(), 'k', 'm', {
+      runs: 1,
+      sampler: async () => 270,
+      docTypeId: 'ua_birth_certificate',
+      osdDetector: async () => {
+        call++
+        // Calls 1-5: the initial reliability check + confirmUprightByOsdCandidates' 4-rotation
+        // loop (cw 0/90/180/270) — all non-Cyrillic, reproducing the real misread. Pre-fix, the
+        // cw=90 candidate (call 3, confidence 0.569) beats cw=0 (call 2, confidence 0.296) by a
+        // 48% gap and wins outright — the exact wrong verdict measured live.
+        if (call === 3) return { cw: 0 as 0, confidence: 0.569, script: 'Japanese' }
+        if (call === 4) return { cw: 180 as 180, confidence: 0.45, script: 'Katakana' }
+        if (call <= 5) return { cw: 0 as 0, confidence: 0.296, script: 'Japanese' }
+        // Calls 6-7: confirmUprightVsAdjacent90's own candidate/flipped check — resolves cleanly
+        // via a real Cyrillic reading so the test never falls through to a live Gemini call.
+        if (call === 6) return { cw: 0 as 0, confidence: 5.0, script: 'Cyrillic' }
+        return { cw: 90 as 90, confidence: 1.0, script: 'Cyrillic' }
+      },
+    })
+    expect(out).toBe(270)
+  })
   it('runs:1 ⇒ single detect verbatim', async () => {
     const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', {
       runs: 1,
@@ -287,6 +423,45 @@ describe('detectUprightCwVoted (injected sampler)', () => {
     })
     expect(out).toBe(270)
     expect(calls).toBe(2)
+  })
+  it('BUG FIX (2026-07-06, live-verified on birth_cert_handwritten_01.jpg with Gemini forced ' +
+    'unavailable): confirmUprightVsAdjacent90 must be fed the buffer AT THE VOTE\'S ROTATION, not ' +
+    'the raw un-rotated buffer — comparing raw (0°) vs raw+90 (90°) is meaningless noise when the ' +
+    'true correction is far from either (e.g. 270°), and previously it silently overwrote a ' +
+    'correct vote (reproduced live: votes folded to 270, this check then flipped it to 0 — a ' +
+    'fully unrotated, wrong output). Verified here by inspecting the ACTUAL grid image bytes sent ' +
+    'to the model: they must match buildAdjacent90Grid(bufferRotatedByVote), not ' +
+    'buildAdjacent90Grid(rawBuffer).', async () => {
+    // A marker image (not a solid color) so rotated variants are byte-distinguishable.
+    const raw = await sharp({ create: { width: 200, height: 300, channels: 3, background: '#ffffff' } })
+      .composite([{ input: await sharp({ create: { width: 40, height: 40, channels: 3, background: '#cc0000' } }).png().toBuffer(), left: 0, top: 0 }])
+      .jpeg()
+      .toBuffer()
+    const rotated270 = await sharp(raw).rotate(270).toBuffer()
+    const correctGrid = await buildAdjacent90Grid(rotated270)
+    const wrongGrid = await buildAdjacent90Grid(raw)
+    expect(correctGrid.equals(wrongGrid)).toBe(false) // sanity: the two reference grids actually differ
+
+    let sentImageB64: string | null = null
+    const fetchSpy = vi.fn(async (_url: string, init: any) => {
+      const body = JSON.parse(init.body)
+      sentImageB64 = body.contents[0].parts[1].inline_data.data
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"side":"left"}' }] } }] }), { status: 200 })
+    })
+    global.fetch = fetchSpy as unknown as typeof fetch
+
+    const out = await detectUprightCwVotedMeta(raw, 'gemini-key', 'gemini-2.5-pro', {
+      runs: 1,
+      sampler: async () => 270,
+      docTypeId: 'ua_birth_certificate',
+      osdDetector: async () => null, // force past every OSD shortcut into the Gemini grid path
+    })
+    expect(out.cw).toBe(270) // 'left' ('candidate') must preserve the vote, not discard it
+
+    expect(sentImageB64).not.toBeNull()
+    const sentBytes = Buffer.from(sentImageB64!, 'base64')
+    expect(sentBytes.equals(correctGrid)).toBe(true)
+    expect(sentBytes.equals(wrongGrid)).toBe(false)
   })
 })
 

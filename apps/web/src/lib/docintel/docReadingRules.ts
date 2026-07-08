@@ -131,6 +131,42 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     ],
   },
 
+  // Soviet-era-only variant of the entry above (item 5, 2026-07-06): identical form, PLUS the
+  // "національність"/"национальность" (nationality) line that Soviet-era blanks carry and
+  // modern post-1991 civil-registry forms dropped — kept as a SEPARATE doc type so this line is
+  // never requested on a modern certificate (fabrication risk documented on the shared
+  // ua_birth_certificate registry entry in documentRegistry.ts).
+  ua_birth_certificate_soviet: {
+    language:
+      'May be RUSSIAN (Soviet/UkrSSR era) OR Ukrainian. Transcribe EXACTLY the script that ' +
+      'is on the page — if the certificate is written in Russian (Соловьяк, Андрей, ' +
+      'Тимофеевич), keep the Russian; do NOT Ukrainianize it. If Ukrainian (Солов’як, ' +
+      'Андрій), keep Ukrainian. Never convert one to the other.',
+    dateGuidance:
+      'The date of birth is usually SPELLED OUT in cursive WORDS ("пятнадцатого января ' +
+      'тысяча девятьсот девяностого года" = 15 January 1990), NOT digits. ' +
+      'METHOD (how a careful reader decodes it): FIRST anchor on the YEAR — it is four number-' +
+      'words "(одна) тысяча девятьсот <tens> <units> года" and is the easiest part; read it to ' +
+      'fix the year. THEN read the DAY as an ordinal word (першого/першій=01 … двадцять ' +
+      'п’ятого/двадцать пятого=25 … тридцять першого=31) and the MONTH as a word. Assemble ' +
+      'YYYY-MM-DD. ' + MONTH_WORD_RULE,
+    rules: [
+      'This is a vintage handwritten certificate on a printed form — the LABELS are printed, ' +
+        'the VALUES are handwritten cursive. Read the cursive values letter by letter.',
+      RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
+      'Read ALL parties: child, FATHER full name, MOTHER full name (e.g. "Соловьяк Андрей ' +
+        'Богданович", "Соловьяк Елена Петровна").',
+      'This Soviet-era blank carries a "національність"/"национальность" (nationality) line ' +
+        'for each parent (e.g. "українець"/"украинец", "росіянин"/"русский") — read it if ' +
+        'present; report field_not_present_on_document if the line is blank or absent.',
+      'Read the certificate series + number, usually Roman-numeral + letters + digits (e.g. ' +
+        '"II-БК № 530174").',
+      'Place of birth is "пгт/смт/село <Name>, <…> району/района, <…> області/области, УРСР/УССР".',
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
   ua_internal_passport_booklet: {
     language: 'Ukrainian (handwritten identity page of the old booklet).',
     dateGuidance:

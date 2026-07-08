@@ -79,6 +79,55 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
       // present, is part of the place-of-birth line or the registration authority.
       { field: 'father_full_name', label_uk: 'Батько', kind: 'name', handwritten: true, required: false },
       { field: 'mother_full_name', label_uk: 'Мати', kind: 'name', handwritten: true, required: false },
+      // NOTE (tried + reverted 2026-07-06): father_nationality/mother_nationality read correctly
+      // live on this Soviet-era document (conf 0.97, matching the real form's "національність"
+      // line), but the contract already marks this concept scopeEra:'soviet_pre1991' and this
+      // registry entry is the SHARED, era-agnostic spec for ua_birth_certificate (Soviet AND
+      // modern documents use the same docTypeId). Modern post-1991 Ukrainian civil-registry forms
+      // dropped this line — wiring it here would prompt the model to look for a field that does
+      // not exist on modern certs, the exact fabrication risk already documented above for
+      // province_of_birth. Needs a Soviet-specific docTypeId/spec variant before this can be
+      // safely added (see birthCertSovietV1Contract.ts's already-anticipated but unwired
+      // father_nationality/mother_nationality contract entries).
+      { field: 'act_record_number', label_uk: 'Актовий запис №', kind: 'doc_number', handwritten: true, required: false },
+      { field: 'act_record_date', label_uk: 'Дата складання актового запису', kind: 'date', handwritten: true, required: false },
+      { field: 'issuing_authority', label_uk: 'Орган реєстрації', kind: 'agency', handwritten: true, required: false },
+      { field: 'certificate_series_number', label_uk: 'Серія та номер свідоцтва', kind: 'doc_number', handwritten: true, required: false },
+      { field: 'date_of_issue', label_uk: 'Дата видачі', kind: 'date', handwritten: true, required: false },
+    ],
+  },
+
+  // ── Ukrainian birth certificate, SOVIET-ERA variant (pre-1991 blanks) ──
+  // Separate docTypeId (item 5, 2026-07-06) so the Soviet-only "національність"
+  // (nationality) line can be requested WITHOUT touching the shared, era-agnostic
+  // ua_birth_certificate spec above — adding it there risked prompting the model to
+  // hunt for a line that doesn't exist on modern certs (see the NOTE on that entry).
+  // Naming this with the `ua_birth_certificate` prefix is deliberate: templateFor()
+  // in ensemble/handwrittenFieldRoute.ts resolves crop-box templates by
+  // docTypeId.includes(key), so this variant automatically inherits the
+  // FIELD_BOX_TEMPLATES.ua_birth_certificate crop boxes with no duplication.
+  // HTR_FIELD_KEY_ALIASES / HTR_COMBINE_FIELDS in documentFieldReader.ts use EXACT
+  // object-key lookup (no substring fallback) — those two maps got matching entries
+  // for this id in the same commit that added this spec.
+  ua_birth_certificate_soviet: {
+    id: 'ua_birth_certificate_soviet',
+    title_en: 'Ukrainian Birth Certificate (Soviet-era)',
+    script: 'cyrillic',
+    consumers: ['translation', 'reparole', 'tps'],
+    vision_anchor: 'child_family_name',
+    fields: [
+      { field: 'child_family_name', label_uk: 'Прізвище', kind: 'name', handwritten: true, required: true },
+      { field: 'child_given_name', label_uk: "Ім'я", kind: 'name', handwritten: true, required: true },
+      { field: 'child_patronymic', label_uk: 'По батькові', kind: 'name', handwritten: true, required: false },
+      { field: 'dob', label_uk: 'Дата народження', kind: 'date', handwritten: true, required: true },
+      { field: 'place_of_birth_city', label_uk: 'Місце народження', kind: 'place_city', handwritten: true, required: false },
+      { field: 'father_full_name', label_uk: 'Батько', kind: 'name', handwritten: true, required: false },
+      { field: 'mother_full_name', label_uk: 'Мати', kind: 'name', handwritten: true, required: false },
+      // Live-verified conf 0.97 on the owner's real Soviet-era certificate (2026-07-06).
+      // Safe HERE because this docTypeId is exclusively Soviet-era — no modern-cert
+      // fabrication risk (unlike the shared ua_birth_certificate spec).
+      { field: 'father_nationality', label_uk: 'Національність батька', kind: 'text', handwritten: true, required: false },
+      { field: 'mother_nationality', label_uk: 'Національність матері', kind: 'text', handwritten: true, required: false },
       { field: 'act_record_number', label_uk: 'Актовий запис №', kind: 'doc_number', handwritten: true, required: false },
       { field: 'act_record_date', label_uk: 'Дата складання актового запису', kind: 'date', handwritten: true, required: false },
       { field: 'issuing_authority', label_uk: 'Орган реєстрації', kind: 'agency', handwritten: true, required: false },
