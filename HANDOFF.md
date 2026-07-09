@@ -2220,3 +2220,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 - NEXT: #6 measured shadow window (Gemini works now) + #5 bypass-collapse (10 bypasses inventoried).
 
 ##  | #6 intake measured live on real cert (pilot N=1)
+
+##  | #5 bypass-collapse PLAN done (map+order); collapses are shadow-then-flip owner-gated
