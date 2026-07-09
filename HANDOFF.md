@@ -1403,3 +1403,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 ##  | CI guards green-up after staging removal
 - Fixed: V1 guard no longer requires the deleted v1-nightly-staging.yml. Session docs updated.
 - NEXT: owner sets OWNER_PII_PATTERNS_B64 secret (Content & Brand guard needs it; only real needed secret).
+
+##  | RELEASE_STATE guard fixed (stale SHA repinned); PR #2 remaining red = OWNER_PII_PATTERNS_B64 secret

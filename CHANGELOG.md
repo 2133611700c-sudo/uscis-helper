@@ -1859,3 +1859,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - No staging Supabase project exists (verified via supabase CLI: 1 project, prod). Removed staging
   workflows (PR #1) broke `verify-v1-completion.mjs` which required v1-nightly-staging.yml; dropped it
   from the required set (5→4). Fixes V1 Program Guard + Session Docs Guard failures.
+
+##  | fix(ci): RELEASE_STATE.yaml state_basis_main_sha -> real main HEAD (post-recreate hygiene)
+- prior pinned SHA c1ab3830 was killed by the PII delete+recreate; repinned to origin/main 02f21206. Greens RELEASE_STATE guard on PR #2. Remaining PR #2 red = Content guard (OWNER_PII_PATTERNS_B64 secret, owner-held).

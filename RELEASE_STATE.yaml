@@ -18,9 +18,9 @@
 schema_version: 2
 
 snapshot:
-  state_basis_main_sha: "c1ab383019e495ec88d824ca88e31e190c9e80b0"   # main HEAD before CI hardening batch (commit before acc1693d)
+  state_basis_main_sha: "02f2120653342b43337a93f41e54cb403a7560a3"   # origin/main HEAD after PII purge + repo recreate (2026-07-09); prior SHA killed by history rewrite
   verified_production_sha: "UNVERIFIED" # /api/healthz returns short SHA "3227dab" not resolvable from this clone
-  verified_at: "2026-06-21T02:17:00Z"
+  verified_at: "2026-07-09T00:00:00Z"
   evidence:
     state_basis_main_sha: "git rev-parse origin/main at snapshot time (BEFORE this PR's own merge)"
     verified_production_sha: "GET https://messenginfo.com/api/healthz -> .sha"
