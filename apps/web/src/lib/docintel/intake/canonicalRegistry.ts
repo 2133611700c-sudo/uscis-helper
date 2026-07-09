@@ -267,7 +267,7 @@ export const CANONICAL_DOCUMENT_REGISTRY: Record<DocumentTypeId, CanonicalRegist
     // NOTE: "blocker" here = OUR-OWN self-hosted HTR (raxtemur, open weights) not yet wired — our
     // infra work, NOT a third-party dependency. Kept in this list only so resolveReaderRouteFromRegistry
     // flags needsHTR; it is not a genuine external dependency like Google Vision billing.
-    externalBlockers: ['htr_self_hosted_not_yet_wired'],
+    externalBlockers: [] as string[],
     knownFailureModes: ['LLM fabricates handwritten cursive', 'native crop does not reliably fix handwritten surname', 'contrast preprocessing does not fix GPT handwriting'],
     currentEvidenceLevel: 'pilot', // orientation+type+language proven on 1 real doc; handwriting NOT solved
   },

@@ -33,11 +33,11 @@ describe('funnel helpers', () => {
     expect(all).toContain('i94'); expect(all).toContain('ua_birth_certificate_soviet')
     expect(all).not.toContain('unknown') // pseudo-types excluded
   })
-  it('reader route + policy come from the registry (soviet birth → civil reader, HTR, review)', () => {
+  it('reader route + policy come from the registry (soviet birth → civil reader, force_review, NO HTR-host dep)', () => {
     const r = resolveReaderRouteFromRegistry('ua_birth_certificate_soviet', true)
     expect(r.reader).toBe('civil_record_reader')
-    expect(r.needsHTR).toBe(true) // force_review + htr externalBlocker
-    expect(r.needsHumanReview).toBe(true)
+    expect(r.needsHTR).toBe(false) // #1: handwriting = high_risk_force_review, NOT dependent on an external HTR host
+    expect(r.needsHumanReview).toBe(true) // handwriting is STILL always human-reviewed (the real guarantee)
   })
 })
 
@@ -50,7 +50,8 @@ describe('ordered intake — the proven soviet birth certificate case', () => {
     expect(result.family.family).toBe('civil_record')
     expect(result.docType.docTypeId).toBe('ua_birth_certificate_soviet')
     expect(result.route.reader).toBe('civil_record_reader')
-    expect(result.route.needsHTR).toBe(true)
+    expect(result.route.needsHTR).toBe(false) // #1: no external HTR-host dependency
+    expect(result.route.needsHumanReview).toBe(true) // handwriting still force-reviewed
     expect(result.status).toBe('needs_review') // handwriting present
     expect(result.review.reasonCodes).toContain('handwriting_present')
     // recognition may run (needs_review still routes) but is held for review

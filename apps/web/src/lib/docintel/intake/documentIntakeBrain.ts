@@ -53,6 +53,9 @@ export function resolveReaderRouteFromRegistry(docTypeId: DocumentTypeId, handwr
   const e = getCanonicalEntry(docTypeId)
   const forcedHw = e.handwritingPolicy === 'force_review'
   const conditionalHw = e.handwritingPolicy === 'force_review_if_handwritten' && handwritingPresent === true
+  // #1 (2026-07-09): HTR is NOT a required external dependency. Handwriting safety = high-risk →
+  // human review (needsHumanReview below), NOT "waiting for an HTR host". No registry entry declares
+  // an htr external blocker anymore, so needsHTR is always false — kept only as a legacy contract flag.
   const needsHTR = (forcedHw || conditionalHw) && e.externalBlockers.some((b) => b.includes('htr'))
   const needsHumanReview = forcedHw || conditionalHw
     || e.reviewPolicy === 'manual_review_required' || e.reviewPolicy === 'reject_or_retake'

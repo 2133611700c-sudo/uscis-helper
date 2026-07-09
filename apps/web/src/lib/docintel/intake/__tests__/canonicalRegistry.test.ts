@@ -93,8 +93,12 @@ describe('fail-closed guarantees', () => {
     expect(REG.ua_birth_certificate_soviet.handwritingPolicy).toBe('force_review')
     expect(REG.ua_birth_certificate_soviet.reviewPolicy).toBe('force_review_handwritten_fields')
   })
-  it('HTR absence is an explicit externalBlocker, not a silent pass', () => {
-    expect(REG.ua_birth_certificate_soviet.externalBlockers.some((b) => b.includes('htr'))).toBe(true)
+  it('#1: handwriting = high_risk_force_review, NOT an external HTR-host dependency', () => {
+    // HTR is our OWN capability, never a required third-party host. Handwriting safety comes from the
+    // force_review policy, so the soviet birth cert must NOT carry an htr external blocker...
+    expect(REG.ua_birth_certificate_soviet.externalBlockers.some((b) => b.includes('htr'))).toBe(false)
+    // ...but handwriting is STILL always force-reviewed (the real, host-independent guarantee).
+    expect(REG.ua_birth_certificate_soviet.handwritingPolicy).toBe('force_review')
   })
   it('us_drivers_license now has a registry entry (Phase 0 gap closed)', () => {
     expect(REG.us_drivers_license).toBeDefined()

@@ -21,7 +21,7 @@ describe('buildEvidenceReport', () => {
     expect(rep.status).toBe('needs_review')
     expect(rep.decisions.docTypeId).toBe('ua_birth_certificate_soviet')
     expect(rep.decisions.reader).toBe('civil_record_reader')
-    expect(rep.decisions.needsHTR).toBe(true)
+    expect(rep.decisions.needsHTR).toBe(false) // #1: handwriting force-reviewed, not HTR-host-dependent
     expect(rep.timeline.length).toBeGreaterThan(4)
     expect(rep.totalMs).toBeGreaterThan(0)
   })
