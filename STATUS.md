@@ -730,3 +730,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 ##  | #4a: language node now emits real handwritingPresent signal
 
 ##  | #4c page-side detector wired (fail-closed); #4 intake gaps complete
+
+##  | #6 One Brain intake LIVE-MEASURED on real birth cert incognito (pilot)
