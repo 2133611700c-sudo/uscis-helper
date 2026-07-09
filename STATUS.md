@@ -728,3 +728,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 ##  | #4b preflight is now a real fail-closed gate (not a hardcoded pass)
 
 ##  | #4a: language node now emits real handwritingPresent signal
+
+##  | #4c page-side detector wired (fail-closed); #4 intake gaps complete

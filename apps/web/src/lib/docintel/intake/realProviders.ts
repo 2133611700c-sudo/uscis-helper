@@ -16,7 +16,7 @@ import { primaryGeminiModel } from '@/lib/docintel/providers/geminiVisionProvide
 import { detectLanguage, detectCountry } from '@/lib/docintel/detectLanguageCountry'
 import { classifyDocumentType } from '@/lib/docintel/detectDocumentType'
 import type { IntakeProviders } from '@/lib/docintel/intake/documentIntakeBrain'
-import type { DocumentTypeId, CountryCode, IssuingSystem, LanguageCode, ScriptCode, ProviderId } from '@/lib/docintel/intake/canonicalRegistry'
+import type { DocumentTypeId, CountryCode, IssuingSystem, LanguageCode, ScriptCode, ProviderId, PageSideId } from '@/lib/docintel/intake/canonicalRegistry'
 
 /** docintel-registry id → canonical intake id (differ only for US forms + passport variants). */
 export const DOCINTEL_TO_CANONICAL: Record<string, DocumentTypeId> = {
@@ -104,6 +104,40 @@ export async function realPreflight(buf: Buffer): Promise<PreflightProbe> {
   }
 }
 
+// ── Page-side detector (#4c): front / back / single / unknown, fail-closed ────────────────────────
+export const PAGE_SIDE_PROMPT =
+  'Is this document image the FRONT side, the BACK side, a SINGLE-sided document, or BLANK/UNCLEAR? ' +
+  'Return STRICT JSON: {"side":"front|back|single|unknown","confidence":0..1}. Use "single" for a ' +
+  'one-sided document (most certificates/forms). Use "unknown" if blank, cropped, or you are unsure.'
+
+/** Normalize a page-side model reply to the closed PAGE_SIDES enum; fail-closed to 'unknown'. */
+export function normalizePageSide(parsed: unknown, min = 0.6): PageSideId {
+  const p = (parsed ?? {}) as Record<string, unknown>
+  const raw = typeof p.side === 'string' ? p.side : 'unknown'
+  const conf = typeof p.confidence === 'number' && p.confidence >= 0 && p.confidence <= 1 ? p.confidence : 0
+  const allowed: PageSideId[] = ['front', 'back', 'single', 'unknown']
+  if (!allowed.includes(raw as PageSideId)) return 'unknown'
+  // a specific side below the confidence floor fails closed to 'unknown' (never a low-confidence guess)
+  if ((raw === 'front' || raw === 'back' || raw === 'single') && conf < min) return 'unknown'
+  return raw as PageSideId
+}
+
+/** Detect page-side via the vision call; any error → fail-closed 'unknown' (never throws). */
+export async function detectPageSide(
+  buf: Buffer,
+  visionCall: (prompt: string, img: Buffer) => Promise<string | null>,
+): Promise<{ side: PageSideId; pageIndex: number | null; provider: ProviderId | null; measured: boolean; timingMs?: number }> {
+  const t0 = Date.now()
+  try {
+    const raw = await visionCall(PAGE_SIDE_PROMPT, buf)
+    if (raw == null) return { side: 'unknown', pageIndex: null, provider: 'openai', measured: false, timingMs: Date.now() - t0 }
+    const parsed = JSON.parse(raw)
+    return { side: normalizePageSide(parsed), pageIndex: null, provider: 'openai', measured: true, timingMs: Date.now() - t0 }
+  } catch {
+    return { side: 'unknown', pageIndex: null, provider: 'openai', measured: false, timingMs: Date.now() - t0 }
+  }
+}
+
 /**
  * Build the real IntakeProviders, or null if no vision provider is available (no OPENAI key).
  * Orientation runs first inside orient(); all provider outputs map into the closed registry enums.
@@ -133,5 +167,6 @@ export function buildRealIntakeProviders(env: Record<string, string | undefined>
       const canonical: DocumentTypeId = DOCINTEL_TO_CANONICAL[d.doc_type_id] ?? 'unknown'
       return { docTypeId: canonical, family: 'unknown', candidates: d.candidates.map((c) => ({ doc_type_id: (DOCINTEL_TO_CANONICAL[c.doc_type_id] ?? 'unknown') as DocumentTypeId, confidence: c.confidence })), confidence: d.confidence, provider: 'openai', measured: d.measured }
     },
+    pageSide: (buf) => detectPageSide(buf, visionCall),
   }
 }

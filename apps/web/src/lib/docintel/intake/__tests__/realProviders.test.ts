@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import sharp from 'sharp'
-import { realPreflight, PREFLIGHT_MIN_SIDE_PX, declaredToCanonical } from '../realProviders'
+import { realPreflight, PREFLIGHT_MIN_SIDE_PX, declaredToCanonical, normalizePageSide } from '../realProviders'
 
 function tile(w: number, h: number): Promise<Buffer> {
   return sharp({ create: { width: w, height: h, channels: 3, background: { r: 200, g: 200, b: 200 } } }).jpeg().toBuffer()
@@ -44,5 +44,20 @@ describe('declaredToCanonical — maps a service hint to a canonical id or null'
     expect(declaredToCanonical('made_up_type')).toBeNull()
     expect(declaredToCanonical(null)).toBeNull()
     expect(declaredToCanonical(undefined)).toBeNull()
+  })
+})
+
+describe('normalizePageSide — #4c fail-closed to the closed enum', () => {
+  it('a confident valid side passes', () => {
+    expect(normalizePageSide({ side: 'single', confidence: 0.95 })).toBe('single')
+    expect(normalizePageSide({ side: 'back', confidence: 0.9 })).toBe('back')
+  })
+  it('a specific side below the confidence floor → unknown (no low-confidence guess)', () => {
+    expect(normalizePageSide({ side: 'front', confidence: 0.2 })).toBe('unknown')
+  })
+  it('an out-of-enum or missing value → unknown', () => {
+    expect(normalizePageSide({ side: 'sideways', confidence: 0.99 })).toBe('unknown')
+    expect(normalizePageSide({})).toBe('unknown')
+    expect(normalizePageSide(null)).toBe('unknown')
   })
 })

@@ -2887,3 +2887,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ##  | #4a language node emits real handwritingPresent (was hardcoded null)
 - detectLanguage: +printedTextPresent/+handwritingPresent (prompt asks for presence; normalize fail-closed to null). realProviders passes them through → intake reason `handwriting_present` now driven by the REAL signal (was always null). tsc 0, tests 120. Downstream (contract/brain/reason) was already wired.
+
+##  | #4c page-side detector (front/back/single/unknown, fail-closed)
+- realProviders.detectPageSide + normalizePageSide (closed PAGE_SIDES enum, low-confidence/out-of-enum → unknown). Wired as providers.pageSide; the funnel step existed, provider was missing. +tests. tsc 0, intake 105.

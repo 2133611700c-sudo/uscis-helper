@@ -2215,3 +2215,6 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 
 ##  | #4a handwritingPresent done
 - NEXT #4c: page-side provider (front/back/single/unknown, fail-closed) + test. Then #5 bypass-collapse. Gemini works (cap $11/$20) → #6 measured window now possible.
+
+##  | #4 intake gaps DONE (#4a hw, #4b preflight, #4c page-side, #4-schema)
+- NEXT: #6 measured shadow window (Gemini works now) + #5 bypass-collapse (10 bypasses inventoried).
