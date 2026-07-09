@@ -736,3 +736,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 ##  | #5 BYPASS_COLLAPSE_PLAN: 10 bypasses mapped, Translation-first order
 
 ##  | #7/#8 intake scorecard: docType 100%/21, handwriting 57% (fixing FP)
+
+##  | Pilot baseline LOCKED; Translation shadow-v1 safe; recommend no-flip until N>=25/family

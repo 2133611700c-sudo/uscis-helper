@@ -2224,3 +2224,6 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 ##  | #5 bypass-collapse PLAN done (map+order); collapses are shadow-then-flip owner-gated
 
 ##  | #7/#8 measured (docType 100%, hw 57%→fixing); #4a prompt v2 to reduce passport FP
+
+##  | translation_shadow_v1 done (Phase A-D): baseline locked, shadow safe, recommend NO flip
+- NEXT: N>=25/family real docs (owner) → per-family shadow window → owner sign-off → controlled flip. No flip on pilot.

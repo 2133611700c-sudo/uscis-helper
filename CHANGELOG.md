@@ -2901,3 +2901,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ##  | #4a v2 re-measured: handwriting 57%→76% (docType 100% held)
 - v2 prompt fixed 4 passport FPs; 5 remain (safe over-review). measure→fix→remeasure loop closed honestly.
+
+##  | translation_shadow_v1: pilot baseline LOCKED + shadow-v1 report
+- ONE_BRAIN_PILOT_BASELINE + ONE_BRAIN_TRANSLATION_SHADOW_V1 docs: docType 100%/21, handwriting 76%, per-family N<25 (pilot, NOT trusted). Recommendation: NO flip; gather N>=25/family. Metrics split (docType/country/handwriting/review-policy/runtime). Success criteria met (0 user-visible change, 0 PII, 0 504, 0 FN). PII guard clean.
