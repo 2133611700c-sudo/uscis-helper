@@ -2904,3 +2904,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ##  | translation_shadow_v1: pilot baseline LOCKED + shadow-v1 report
 - ONE_BRAIN_PILOT_BASELINE + ONE_BRAIN_TRANSLATION_SHADOW_V1 docs: docType 100%/21, handwriting 76%, per-family N<25 (pilot, NOT trusted). Recommendation: NO flip; gather N>=25/family. Metrics split (docType/country/handwriting/review-policy/runtime). Success criteria met (0 user-visible change, 0 PII, 0 504, 0 FN). PII guard clean.
+
+##  | RULES: document locations + birth-cert-only test discipline fixed in CLAUDE.md
+- Added "TEST DOCUMENTS" section to CLAUDE.md: where real docs live (manifest qa-private/real-doc-manifest.json; images test-fixtures/real-docs + qa-shots/private; GT qa-private/ground-truth), ONLY test doc = birth_cert_handwritten_01.jpg (doc_001), NEVER hint the system, read rules first. No PII in the rule. Studied CONSTITUTION (L1/L6/L8/L10). Inventory only, no tests (owner order).

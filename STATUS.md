@@ -738,3 +738,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 ##  | #7/#8 intake scorecard: docType 100%/21, handwriting 57% (fixing FP)
 
 ##  | Pilot baseline LOCKED; Translation shadow-v1 safe; recommend no-flip until N>=25/family
+
+##  | Document locations + birth-cert-only rule fixed in CLAUDE.md + memory (no tests)

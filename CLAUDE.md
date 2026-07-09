@@ -6,6 +6,16 @@
 - `docs/architecture/RECOGNITION_ORG_CHART.md` — each AI's single role; `docs/adr/ADR-AGENT-PERMISSIONS.md` — permissions.
 - RULE #1 (owner-emphatic): for ANY task, read the existing report/audit on THAT question BEFORE planning or coding.
 
+## TEST DOCUMENTS — WHERE THEY ARE + TEST DISCIPLINE (owner order 2026-07-09; never ask "where are the docs")
+- **Authoritative index of all real docs:** `qa-private/real-doc-manifest.json` (in the sibling repo
+  `~/work/uscis-helper`; gitignored) — 21 docs → absolute path + docTypeHint + expectedFields + handwritten.
+- **Real doc images:** `~/work/uscis-helper/test-fixtures/real-docs/` and `~/work/uscis-helper/qa-shots/private/`
+  (both gitignored). **Ground truth:** `~/work/uscis-helper/qa-private/ground-truth/` (real PII → never echo values, only field names). Some filenames contain the owner's real name = PII: reference the DIR + manifest, never the filename.
+- **THE ONLY test document = the birth certificate:** `test-fixtures/real-docs/birth_cert_handwritten_01.jpg`
+  (manifest `doc_001`; ~7 MB → resize <4.5 MB before any Vercel POST). GT: `qa-private/ground-truth/birth_cert_handwritten_01.json`. It is one of the HARDEST docs (handwritten Soviet cyrillic) — the system is validated on it. **Do NOT test other document families unless the owner explicitly says so.**
+- **NEVER hint the system:** on any test give the RAW FILE ONLY — no docType, language, country, orientation, page-side, or recognition hint. Any hint invalidates the test and breaks the project. Intake must self-detect everything (fully incognito).
+- **Read the rules FIRST, before any test** (this menu + RULES_MASTER_INDEX + CONSTITUTION + the existing report on that question).
+
 ## BEFORE YOU TOUCH ANY CODE — READ THESE FILES (in order):
 0. `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` — consolidated evidence-only audit (brain/dictionary/arbitration/canonical + repo/PR/security/deploy). Read FIRST; verified facts, `UNVERIFIED` items, and risk register.
 1. `STATUS.md` — current operational truth (1 screen)

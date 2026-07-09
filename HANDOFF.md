@@ -2227,3 +2227,6 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 
 ##  | translation_shadow_v1 done (Phase A-D): baseline locked, shadow safe, recommend NO flip
 - NEXT: N>=25/family real docs (owner) → per-family shadow window → owner sign-off → controlled flip. No flip on pilot.
+
+##  | Inventory + rules fixation done (no tests). Doc locations in CLAUDE.md + memory.
+- Real docs: uscis-helper/test-fixtures/real-docs + qa-shots/private; manifest qa-private/real-doc-manifest.json; GT qa-private/ground-truth. Birth cert = doc_001 (only test doc). NEXT: owner directs after inventory+rules.
