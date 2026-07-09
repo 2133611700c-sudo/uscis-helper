@@ -2895,3 +2895,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - /api/diag/intake on the real Soviet birth cert, no hints: SU/soviet_legacy, ua_birth_certificate_soviet conf 1.0, handwritingPresent=true, pageSide=single, needsHTR=false, needs_review reason handwriting_present. All nodes measured. PII-free evidence: docs/reports/ONE_BRAIN_INTAKE_LIVE_MEASURED_2026-07-09.md. N=1 pilot (not trusted).
 
 ##  | #5 BYPASS_COLLAPSE_PLAN written (10 bypasses inventoried, collapse order)
+
+##  | #7/#8 intake scorecard on 21 real docs + #4a prompt v2
+- docType self-detect 19/19=100%, handwriting 12/21=57% (v1 over-flags passport signatures). #4a prompt v2: ask about hand-filled DATA fields, not signatures. Evidence: ONE_BRAIN_INTAKE_SCORECARD_2026-07-09.md. N=21 pilot.

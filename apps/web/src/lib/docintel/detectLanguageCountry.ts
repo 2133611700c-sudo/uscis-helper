@@ -42,8 +42,11 @@ export function buildLanguagePrompt(): string {
   return (
     'Identify the primary written LANGUAGE from the PRINTED text and script of this document image ' +
     '(judge the LANGUAGE from printed text only, ignoring handwriting for the language decision). ' +
-    'SEPARATELY, report whether any PRINTED text is present and whether any HANDWRITTEN (cursive or ' +
-    'hand-filled) text is present anywhere on the page. Return STRICT JSON: ' +
+    'SEPARATELY, report two booleans about how the DOCUMENT DATA is entered: printed_text_present = is ' +
+    'the main body/data printed? handwriting_present = are the DATA/answer FIELDS filled in by hand ' +
+    '(hand-written entries such as names, dates, places written into the form). Do NOT set ' +
+    'handwriting_present true merely because a printed document carries a signature or a stamp — it ' +
+    'must be the DATA fields themselves that are hand-written. Return STRICT JSON: ' +
     '{"language":"uk|ru|en|mixed|unknown","scripts_seen":["cyrillic"|"latin"...],"confidence":0..1,' +
     '"printed_text_present":true|false,"handwriting_present":true|false}. ' +
     'Use "mixed" if two languages are printed together (e.g. a bilingual Russian+Ukrainian Soviet ' +

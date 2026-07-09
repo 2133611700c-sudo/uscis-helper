@@ -2222,3 +2222,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 ##  | #6 intake measured live on real cert (pilot N=1)
 
 ##  | #5 bypass-collapse PLAN done (map+order); collapses are shadow-then-flip owner-gated
+
+##  | #7/#8 measured (docType 100%, hw 57%→fixing); #4a prompt v2 to reduce passport FP
