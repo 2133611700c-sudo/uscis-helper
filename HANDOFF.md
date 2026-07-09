@@ -1399,3 +1399,7 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-21 audit: gemini-quota-diag image probe (primary vs flash on a real image) -->
 
 <!-- 2026-06-21 audit: diag image-gen robust (Pillow) -->
+
+##  | CI guards green-up after staging removal
+- Fixed: V1 guard no longer requires the deleted v1-nightly-staging.yml. Session docs updated.
+- NEXT: owner sets OWNER_PII_PATTERNS_B64 secret (Content & Brand guard needs it; only real needed secret).

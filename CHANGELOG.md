@@ -1854,3 +1854,8 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 <!-- 2026-06-21 audit: gemini-quota-diag image probe (primary vs flash on a real image) -->
 
 <!-- 2026-06-21 audit: diag image-gen robust (Pillow) -->
+
+##  | CI: drop dead v1-nightly-staging from V1 guard required list
+- No staging Supabase project exists (verified via supabase CLI: 1 project, prod). Removed staging
+  workflows (PR #1) broke `verify-v1-completion.mjs` which required v1-nightly-staging.yml; dropped it
+  from the required set (5→4). Fixes V1 Program Guard + Session Docs Guard failures.

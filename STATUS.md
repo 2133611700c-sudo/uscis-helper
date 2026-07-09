@@ -176,3 +176,6 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-06-21 audit: gemini-quota-diag image probe (primary vs flash on a real image) -->
 
 <!-- 2026-06-21 audit: diag image-gen robust (Pillow) -->
+
+##  | CI guards fixed (staging-removal fallout)
+- V1 Program Guard + Session Docs Guard: green after this commit. Content guard still needs OWNER_PII_PATTERNS_B64 (owner).
