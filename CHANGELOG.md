@@ -2898,3 +2898,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ##  | #7/#8 intake scorecard on 21 real docs + #4a prompt v2
 - docType self-detect 19/19=100%, handwriting 12/21=57% (v1 over-flags passport signatures). #4a prompt v2: ask about hand-filled DATA fields, not signatures. Evidence: ONE_BRAIN_INTAKE_SCORECARD_2026-07-09.md. N=21 pilot.
+
+##  | #4a v2 re-measured: handwriting 57%→76% (docType 100% held)
+- v2 prompt fixed 4 passport FPs; 5 remain (safe over-review). measure→fix→remeasure loop closed honestly.
