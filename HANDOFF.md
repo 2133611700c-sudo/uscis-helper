@@ -2209,3 +2209,6 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 
 ##  | #3 Translation shadow wired (default OFF)
 - One Brain observes intake decision alongside current Translation path. NEXT: #4 intake gaps (handwritingPresent, preflight real checks, page-side, strict schema) then #6 real shadow window on the birth certificate (owner Preview + flag).
+
+##  | #4b preflight real checks done
+- NEXT #4: handwritingPresent from language node, page-side detector, strict-schema provider outputs. Then #6 shadow window on the birth certificate.

@@ -2881,3 +2881,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ##  | #3 Translation SHADOW_ONLY wiring (One Brain intake, default OFF)
 - Shared buildRealIntakeProviders() (diag + translation use ONE builder, no dup). vision-extract route now runs runIntakeShadow on the raw first page when ONE_BRAIN_INTAKE_SHADOW=1 — flag-first so OFF is a byte-identical zero-cost no-op; fail-open; PII-free log; no client-output change; no human hint in the decision. tsc 0, intake 96/96.
+
+##  | #4b preflight: real deterministic image gate (was hardcoded pass)
+- realProviders.realPreflight: sharp-based decode + dimension check; fail-closed (corrupt/empty → isDocument:false → not_a_document; <400px short side → quality low). Vision-free, PII-free. Unit tests (ok/tiny/corrupt/empty + declaredToCanonical). tsc 0, intake 102/102.

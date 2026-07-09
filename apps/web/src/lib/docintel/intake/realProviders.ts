@@ -9,13 +9,14 @@
  * Providers are OpenAI-vision-based (OpenAI + Gemini are the vision-capable providers; DeepSeek is
  * text/reasoning-only). Outputs stay registry-enum-constrained downstream.
  */
+import sharp from 'sharp'
 import { orientToUpright, isContentOrientEnabled } from '@/lib/docintel/orientation/detectOrientation'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { primaryGeminiModel } from '@/lib/docintel/providers/geminiVisionProvider'
 import { detectLanguage, detectCountry } from '@/lib/docintel/detectLanguageCountry'
 import { classifyDocumentType } from '@/lib/docintel/detectDocumentType'
 import type { IntakeProviders } from '@/lib/docintel/intake/documentIntakeBrain'
-import type { DocumentTypeId, CountryCode, IssuingSystem, LanguageCode, ScriptCode } from '@/lib/docintel/intake/canonicalRegistry'
+import type { DocumentTypeId, CountryCode, IssuingSystem, LanguageCode, ScriptCode, ProviderId } from '@/lib/docintel/intake/canonicalRegistry'
 
 /** docintel-registry id → canonical intake id (differ only for US forms + passport variants). */
 export const DOCINTEL_TO_CANONICAL: Record<string, DocumentTypeId> = {
@@ -57,6 +58,52 @@ export function buildOpenAiVisionCall(env: Record<string, string | undefined> = 
   }
 }
 
+/** Preflight result shape expected by the intake brain (kept in sync with IntakeProviders.preflight). */
+export interface PreflightProbe {
+  isDocument: boolean | null
+  mediaType: 'image' | 'pdf' | 'unknown'
+  pageCount: number | null
+  isFullPage: boolean | null
+  quality: 'ok' | 'low' | 'not_measured'
+  isDuplicate: boolean | null
+  provider: ProviderId | null
+  timingMs?: number
+}
+
+/** Minimum readable side (px). Below this a document is too small to read reliably → quality:'low'. */
+export const PREFLIGHT_MIN_SIDE_PX = 400
+
+/**
+ * Deterministic, vision-free preflight: decode with sharp and check the image is real + big enough.
+ * Fail-CLOSED — a corrupt/undecodable buffer is `isDocument:false` (never a silent pass). No PII.
+ */
+export async function realPreflight(buf: Buffer): Promise<PreflightProbe> {
+  const t0 = Date.now()
+  try {
+    const meta = await sharp(buf, { failOn: 'error' }).metadata()
+    const w = meta.width ?? 0
+    const h = meta.height ?? 0
+    const decodable = w > 0 && h > 0
+    if (!decodable) {
+      return { isDocument: false, mediaType: 'unknown', pageCount: null, isFullPage: null, quality: 'low', isDuplicate: false, provider: null, timingMs: Date.now() - t0 }
+    }
+    const minSide = Math.min(w, h)
+    return {
+      isDocument: true,
+      mediaType: 'image',
+      pageCount: 1,
+      isFullPage: null, // full-page-vs-crop needs vision; honest null here
+      quality: minSide < PREFLIGHT_MIN_SIDE_PX ? 'low' : 'ok',
+      isDuplicate: false,
+      provider: null,
+      timingMs: Date.now() - t0,
+    }
+  } catch {
+    // corrupt / not an image → fail-closed
+    return { isDocument: false, mediaType: 'unknown', pageCount: null, isFullPage: null, quality: 'low', isDuplicate: false, provider: null, timingMs: Date.now() - t0 }
+  }
+}
+
 /**
  * Build the real IntakeProviders, or null if no vision provider is available (no OPENAI key).
  * Orientation runs first inside orient(); all provider outputs map into the closed registry enums.
@@ -65,7 +112,7 @@ export function buildRealIntakeProviders(env: Record<string, string | undefined>
   const visionCall = buildOpenAiVisionCall(env)
   if (!visionCall) return null
   return {
-    preflight: async () => ({ isDocument: true, mediaType: 'image', pageCount: 1, isFullPage: true, quality: 'ok', isDuplicate: false, provider: null, timingMs: 0 }),
+    preflight: realPreflight, // deterministic, vision-free, fail-closed (was a hardcoded pass)
     orient: async (buf) => {
       if (!isContentOrientEnabled()) return { rotationAppliedCw: null, telemetryStatus: 'disabled', provider: null, measured: false, trusted: false }
       const o = await orientToUpright(buf, getGeminiApiKey(), primaryGeminiModel(), {})
