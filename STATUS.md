@@ -722,3 +722,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 ##  | #1 in progress: HTR de-dependency (handwriting force_review, no host)
 
 ##  | #1 provider-policy complete: HTR/Vision not critical-path; handwriting force_review
+
+##  | #3 Translation SHADOW_ONLY wired (One Brain intake, OFF by default, byte-identical)

@@ -2878,3 +2878,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ##  | #1 doc: RUNTIME_TRUTH HTR node reframed (DARK, not BLOCKED_EXTERNAL)
 - Node 14 HTR: BLOCKED_EXTERNAL → DARK (our own optional capability, not an external host, not a blocker); Google Vision = optional/not_critical_path. Vocab-guard 2/2. Handwriting stays high_risk_force_review.
+
+##  | #3 Translation SHADOW_ONLY wiring (One Brain intake, default OFF)
+- Shared buildRealIntakeProviders() (diag + translation use ONE builder, no dup). vision-extract route now runs runIntakeShadow on the raw first page when ONE_BRAIN_INTAKE_SHADOW=1 — flag-first so OFF is a byte-identical zero-cost no-op; fail-open; PII-free log; no client-output change; no human hint in the decision. tsc 0, intake 96/96.

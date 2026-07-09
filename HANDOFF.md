@@ -2206,3 +2206,6 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 
 ##  | #1 provider-policy DONE (code + doc)
 - RUNTIME_TRUTH reframed. NEXT: #3 Translation SHADOW_ONLY wiring (connect One Brain intake shadow to real Translation route, default OFF, no client-output change, PII-free trace).
+
+##  | #3 Translation shadow wired (default OFF)
+- One Brain observes intake decision alongside current Translation path. NEXT: #4 intake gaps (handwritingPresent, preflight real checks, page-side, strict schema) then #6 real shadow window on the birth certificate (owner Preview + flag).
