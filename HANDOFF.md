@@ -2203,3 +2203,6 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 
 ##  | #1 provider-policy correction started
 - HTR reframed: not a required external host; handwriting = high_risk_force_review. NEXT #1: RUNTIME_TRUTH doc reframe + Vision-off-does-not-block-shadow test; then #3 Translation SHADOW wiring.
+
+##  | #1 provider-policy DONE (code + doc)
+- RUNTIME_TRUTH reframed. NEXT: #3 Translation SHADOW_ONLY wiring (connect One Brain intake shadow to real Translation route, default OFF, no client-output change, PII-free trace).

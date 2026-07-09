@@ -720,3 +720,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-07-06: crop-transport follow-up — `readHandwrittenRoute` now accepts `HANDWRITING_CROP_LLM=openai` in addition to Gemini, but the route is still gated to handwritten families only. `ua_internal_passport_booklet` is confirmed printed in the model matrix, so 0 handwritten fields there is expected and not a regression. -->
 
 ##  | #1 in progress: HTR de-dependency (handwriting force_review, no host)
+
+##  | #1 provider-policy complete: HTR/Vision not critical-path; handwriting force_review

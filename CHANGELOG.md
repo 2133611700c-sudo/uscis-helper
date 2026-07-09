@@ -2875,3 +2875,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ##  | #1 provider-policy: HTR is NOT an external dependency
 - Dropped htr external blocker from soviet-birth registry; handwriting stays force_review (needsHumanReview) but needsHTR now always false. No HTR-host dependency. tsc 0, intake 96/96.
+
+##  | #1 doc: RUNTIME_TRUTH HTR node reframed (DARK, not BLOCKED_EXTERNAL)
+- Node 14 HTR: BLOCKED_EXTERNAL → DARK (our own optional capability, not an external host, not a blocker); Google Vision = optional/not_critical_path. Vocab-guard 2/2. Handwriting stays high_risk_force_review.

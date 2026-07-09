@@ -43,7 +43,7 @@ handwritten/cert families (`isHandwrittenFamily`).
 | 11 | Normalize collapse (P8) | SHADOW_ONLY | NORMALIZE_COLLAPSE_SHADOW: rule-pack = сигнальная обёртка САМОГО postExtractNormalize (drift=0 by construction), differ vs live-писатель. Переход: чистое окно → route читает сигналы, движок пишет (шаг 2) |
 | 12 | ASSESS→ZOOM verification re-read | FLAGGED | ASSESS_ZOOM_LOOP: критик называет HARD-противоречия → ≤4 платных перечиток; значения не меняет, review только вверх (zoom_mismatch). Переход: staging-наблюдение маркера + флип |
 | 13 | DeepSeek | LIVE | Наследие: TPS-brain включается НАЛИЧИЕМ ключа (key≠permission не инвертирован — ждёт [deepseek_brain_contribution] цифр + sign-off). Допустимая target-роль: дешёвый helper/analyst/explainer для системы и других агентов; НЕ silent final writer. Prose-инструменты (Watchdog-вердикт, Explainer-полировка) — strict-flag механизмы внутри узла, default OFF; локальный helper `scripts/shadow-watchdog.ts` читает aggregate-only logs |
-| 14 | HTR (raxtemur crop-транспорт) | BLOCKED_EXTERNAL | HTR_SIDECAR_URL не задан (owner-хост). Маршрут готов (crop-контракт + LLM-транспорт live-проверен механически); КАЧЕСТВО рукописи без HTR не решено — LLM на курсиве фабрикует (ADR-026) |
+| 14 | HTR (raxtemur crop-транспорт) | DARK | НАША СОБСТВЕННАЯ опциональная возможность (raxtemur, self-hostable in-process), НЕ требуемый внешний хост и НЕ блокер проекта. Маршрут-код готов (crop-контракт + LLM-транспорт live-проверен механически), но не live. Рукопись = high_risk_force_review ВСЕГДА (никогда auto-final); качество курсива LLM не решает — фабрикует (ADR-026) |
 | 15 | Model policy | LIVE | matrix (PRIMARY/FALLBACK/DEPRECATED/DISQUALIFIED) + acceptanceModelVerdict + forbidden-preview-family guard в CI. Historical-упоминания запретной версии остаются на HISTORICAL-поверхностях by design |
 
 ## Детализация (вспомогательная; классы те же)
@@ -70,12 +70,13 @@ handwritten/cert families (`isHandwrittenFamily`).
 2. Token-бюджет thinking-моделей (MAX_TOKENS → пустые риды) — исправлено (cap≥8192, провайдер + crop-reader).
 3. One-shot чтение вместо field-first цикла — узлы цикла построены (2a/11/12), классы выше.
 4. Отсутствие provider-geometry в live-пути — узел 9 (DARK).
-5. Отсутствие production-рукописного ридера — узел 14 (BLOCKED_EXTERNAL).
+5. Отсутствие production-рукописного ридера — узел 14 (DARK, наша опциональная возможность, НЕ внешний блокер). Рукопись = high_risk_force_review.
 Внутренние механики consumer-приложений — не утверждаем (нет доступа).
 
 ## Итоговая честная формулировка (эталон для любых отчётов)
 One Brain convergence materially advanced: shadow/flagged-механизмы реализованы и наблюдаемы,
 flip-критерии машиночитаемы. Runtime остаётся PARTIAL: legacy-fallback translation LIVE,
 TPS 7 писателей LIVE, ReaderResult FLAGGED (не live-spine), provider-bbox DARK, HTR
-BLOCKED_EXTERNAL. Дальше по v3-плану: T0 truth lock → T1 Translation vertical (окно → флипы
+DARK (наша опциональная возможность, не внешний блокер; рукопись = force_review). Google Vision =
+optional / not_critical_path (billing-driven, не критичный путь). Дальше по v3-плану: T0 truth lock → T1 Translation vertical (окно → флипы
 по одному) → EAD → ReParole → TPS последним. Каждый claim — только со классом из этого файла.
