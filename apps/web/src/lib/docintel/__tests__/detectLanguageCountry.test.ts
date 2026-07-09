@@ -63,11 +63,30 @@ describe('detect* — provider failure = fail-closed', () => {
   })
 })
 
-describe('prompts forbid handwriting, demand printed', () => {
-  it('both prompts say printed + ignore handwriting', () => {
+describe('prompts: printed for language, plus handwriting-presence signal', () => {
+  it('both prompts reference printed + handwriting', () => {
     for (const p of [buildLanguagePrompt(), buildCountryPrompt()]) {
       expect(p.toLowerCase()).toContain('printed')
       expect(p.toLowerCase()).toContain('handwrit')
     }
+  })
+  it('language prompt asks for the handwriting_present signal', () => {
+    expect(buildLanguagePrompt()).toContain('handwriting_present')
+  })
+})
+
+describe('#4a — handwriting/printed presence signal (fail-closed)', () => {
+  it('extracts real booleans from the model', () => {
+    const r = normalizeLanguage({ language: 'mixed', confidence: 0.9, printed_text_present: true, handwriting_present: true })
+    expect(r.printedTextPresent).toBe(true)
+    expect(r.handwritingPresent).toBe(true)
+  })
+  it('handwriting_present false stays false', () => {
+    expect(normalizeLanguage({ language: 'en', confidence: 0.9, handwriting_present: false }).handwritingPresent).toBe(false)
+  })
+  it('absent / non-boolean → null (never a guess)', () => {
+    expect(normalizeLanguage({ language: 'uk', confidence: 0.9 }).handwritingPresent).toBeNull()
+    expect(normalizeLanguage({ language: 'uk', confidence: 0.9, handwriting_present: 'yes' }).handwritingPresent).toBeNull()
+    expect(normalizeLanguage({ language: 'uk', confidence: 0.9 }).printedTextPresent).toBeNull()
   })
 })

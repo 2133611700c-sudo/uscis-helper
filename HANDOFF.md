@@ -2212,3 +2212,6 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 
 ##  | #4b preflight real checks done
 - NEXT #4: handwritingPresent from language node, page-side detector, strict-schema provider outputs. Then #6 shadow window on the birth certificate.
+
+##  | #4a handwritingPresent done
+- NEXT #4c: page-side provider (front/back/single/unknown, fail-closed) + test. Then #5 bypass-collapse. Gemini works (cap $11/$20) → #6 measured window now possible.

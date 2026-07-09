@@ -19,6 +19,10 @@ export interface LanguageDetection {
   scripts_seen: string[] // e.g. ['cyrillic','latin']
   confidence: number
   measured: boolean
+  // presence signals (fail-closed to null when the model doesn't report them). handwritingPresent
+  // feeds the intake review policy (force_review_if_handwritten) + the 'handwriting_present' reason.
+  printedTextPresent: boolean | null
+  handwritingPresent: boolean | null
 }
 export interface CountryDetection {
   country: DocCountry
@@ -36,11 +40,15 @@ export function langCountryDetectEnabled(env: Record<string, string | undefined>
 
 export function buildLanguagePrompt(): string {
   return (
-    'Look ONLY at the PRINTED text and script of this document image (ignore handwriting). ' +
-    'Identify the primary written LANGUAGE and the scripts present. Return STRICT JSON: ' +
-    '{"language":"uk|ru|en|mixed|unknown","scripts_seen":["cyrillic"|"latin"...],' +
-    '"confidence":0..1}. Use "mixed" if two languages are printed together (e.g. a bilingual ' +
-    'Russian+Ukrainian Soviet form). Base it on the printed text only; if unclear, "unknown".'
+    'Identify the primary written LANGUAGE from the PRINTED text and script of this document image ' +
+    '(judge the LANGUAGE from printed text only, ignoring handwriting for the language decision). ' +
+    'SEPARATELY, report whether any PRINTED text is present and whether any HANDWRITTEN (cursive or ' +
+    'hand-filled) text is present anywhere on the page. Return STRICT JSON: ' +
+    '{"language":"uk|ru|en|mixed|unknown","scripts_seen":["cyrillic"|"latin"...],"confidence":0..1,' +
+    '"printed_text_present":true|false,"handwriting_present":true|false}. ' +
+    'Use "mixed" if two languages are printed together (e.g. a bilingual Russian+Ukrainian Soviet ' +
+    'form). If the language is unclear, "unknown". Set handwriting_present true only if you actually ' +
+    'see hand-written characters (not printed).'
   )
 }
 
@@ -71,7 +79,10 @@ export function normalizeLanguage(parsed: unknown, min = LANG_MIN_CONFIDENCE): L
     : isSpecific && conf < min
       ? 'unknown'
       : langRaw
-  return { language, scripts_seen: scripts, confidence: conf, measured: true }
+  // presence signals: only accept a real boolean, else fail-closed to null (unknown, never a guess).
+  const printedTextPresent = typeof p.printed_text_present === 'boolean' ? p.printed_text_present : null
+  const handwritingPresent = typeof p.handwriting_present === 'boolean' ? p.handwriting_present : null
+  return { language, scripts_seen: scripts, confidence: conf, measured: true, printedTextPresent, handwritingPresent }
 }
 
 export function normalizeCountry(parsed: unknown, min = COUNTRY_MIN_CONFIDENCE): CountryDetection {
@@ -132,7 +143,7 @@ export function detectLanguage(
   visionCall: (prompt: string, image: Buffer) => Promise<string | null>,
 ): Promise<LanguageDetection> {
   return classifyWith(imageBuffer, visionCall, buildLanguagePrompt(), (p) => normalizeLanguage(p),
-    { language: 'unknown', scripts_seen: [], confidence: 0, measured: false })
+    { language: 'unknown', scripts_seen: [], confidence: 0, measured: false, printedTextPresent: null, handwritingPresent: null })
 }
 
 export function detectCountry(

@@ -2884,3 +2884,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ##  | #4b preflight: real deterministic image gate (was hardcoded pass)
 - realProviders.realPreflight: sharp-based decode + dimension check; fail-closed (corrupt/empty → isDocument:false → not_a_document; <400px short side → quality low). Vision-free, PII-free. Unit tests (ok/tiny/corrupt/empty + declaredToCanonical). tsc 0, intake 102/102.
+
+##  | #4a language node emits real handwritingPresent (was hardcoded null)
+- detectLanguage: +printedTextPresent/+handwritingPresent (prompt asks for presence; normalize fail-closed to null). realProviders passes them through → intake reason `handwriting_present` now driven by the REAL signal (was always null). tsc 0, tests 120. Downstream (contract/brain/reason) was already wired.

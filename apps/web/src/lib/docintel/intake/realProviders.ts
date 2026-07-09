@@ -121,7 +121,7 @@ export function buildRealIntakeProviders(env: Record<string, string | undefined>
     },
     language: async (buf) => {
       const l = await detectLanguage(buf, visionCall)
-      return { primary: mapLang(l.language), scripts: mapScripts(l.scripts_seen), languageMode: l.language === 'mixed' ? 'bilingual' : 'monolingual', printedTextPresent: null, handwritingPresent: null, confidence: l.confidence, provider: 'openai', measured: l.measured }
+      return { primary: mapLang(l.language), scripts: mapScripts(l.scripts_seen), languageMode: l.language === 'mixed' ? 'bilingual' : 'monolingual', printedTextPresent: l.printedTextPresent ?? null, handwritingPresent: l.handwritingPresent ?? null, confidence: l.confidence, provider: 'openai', measured: l.measured }
     },
     country: async (buf) => {
       const c = await detectCountry(buf, visionCall)

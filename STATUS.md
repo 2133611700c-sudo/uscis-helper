@@ -726,3 +726,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 ##  | #3 Translation SHADOW_ONLY wired (One Brain intake, OFF by default, byte-identical)
 
 ##  | #4b preflight is now a real fail-closed gate (not a hardcoded pass)
+
+##  | #4a: language node now emits real handwritingPresent signal
