@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-07-10 | monitor: degrade email delivery instead of RED-failing on dead Resend key
+### Changed
+- `scripts/monitoring/lib/email.ts` — `sendDigest` no longer throws when Resend rejects the send.
+  Monitoring already succeeded; a dead/invalid RESEND_API_KEY should not RED the whole Federal
+  Register Monitor job. On failure it logs a loud `::warning::` + the digest to the run output and
+  returns success. `EMAIL_STRICT=1` restores hard-fail. Email = DEGRADED (visible warning), not
+  silently green. Root cause (proven earlier by direct Resend API test): key corrupted with trailing
+  `\n` (400) AND revoked (cleaned key → 401). Recreated clean off main (old #3 was CONFLICTING).
+
 ## 2026-07-10 | P8-A live Preview smoke + clean One Brain source-of-truth bundle
 - Added `docs/reports/P8A_MAINLINE_ZERO_COST_VERIFY_2026-07-10.md` — evidence-only verification that `#4`, `#6`, and `#8` are merged on `origin/main`; Translation shadow hook exists on main and is default-OFF by code; `ua_birth_certificate_soviet` is present in the live catalog/rules; Preview has `ONE_BRAIN_INTAKE_SHADOW=1` and `DIAG_ORIENT_ENABLED=1`, Production does not.
 - Added `docs/reports/ONE_BRAIN_RECOGNITION_REALITY_2026-07-10.md` — the clean docs-only truth: intake detection != field recognition; handwriting remains review-only; green CI/mainline presence do not prove live accuracy.
