@@ -36,6 +36,8 @@ import { heicToJpeg } from '@/lib/ocr/heicToJpeg'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
 import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
+import { runIntakeShadow, isIntakeShadowEnabled } from '@/lib/docintel/intake/shadowRunner'
+import { buildRealIntakeProviders, declaredToCanonical } from '@/lib/docintel/intake/realProviders'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked, isProviderError } from '@/lib/ocr/types'
 import { httpStatusForOcrError, type OcrProviderError } from '@/lib/ocr/ocrErrors'
@@ -254,6 +256,28 @@ async function POST_impl(req: NextRequest) {
         { ok: false, error: `File too large: ${(file.size / 1024 / 1024).toFixed(1)} MB. Max 10 MB per page.` },
         { status: 413 },
       )
+    }
+  }
+
+  // ── One Brain intake SHADOW — default OFF ⇒ byte-identical no-op ──────────
+  // Observes what the DocumentIntakeBrain would decide from the RAW first page with NO human
+  // hint, ALONGSIDE the current path. Never changes the response; fail-open; PII-free log only.
+  // The flag is checked FIRST so OFF costs nothing (no buffer read, no provider build, no
+  // latency ⇒ no 504 risk). Enable only on Preview via ONE_BRAIN_INTAKE_SHADOW=1.
+  if (isIntakeShadowEnabled()) {
+    try {
+      const shadowProviders = buildRealIntakeProviders()
+      if (shadowProviders) {
+        const firstBuf = Buffer.from(new Uint8Array(await rawFiles[0].arrayBuffer()))
+        await runIntakeShadow(
+          firstBuf,
+          shadowProviders,
+          { service: 'translation', declaredDocTypeId: declaredToCanonical(docTypeId) },
+          { traceId: 'translation-shadow', log: (m, p) => console.info(m, JSON.stringify(p)) },
+        )
+      }
+    } catch {
+      // shadow must NEVER affect the live translation response
     }
   }
 

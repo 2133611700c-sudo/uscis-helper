@@ -1,3 +1,13 @@
+# HANDOFF (2026-07-10 — Translation intake shadow wiring, default OFF)
+
+## 2026-07-10 | P4: ONE_BRAIN_INTAKE_SHADOW wired into Translation route (default OFF)
+- Branch `feat/one-brain-shadow-wire` (stacked on `feat/one-brain-intake-foundation` / PR #4).
+- Added shadow block to vision-extract route: flag-gated FIRST (OFF ⇒ no buffer read, no provider,
+  no latency), try/catch fail-open, never alters response. + source-guard test + shadow-off proof doc.
+- Depends on PR #4 (foundation). Merge order: #4 first, then this.
+- NEXT: PR CI green → merge after #4 → enable flag on Preview only → shadow window N>=25/family (#79).
+
+<!-- prior handoff below -->
 # HANDOFF (2026-07-10 — One Brain intake foundation onto mainline)
 
 ## 2026-07-10 | One Brain intake foundation transplanted to main history
