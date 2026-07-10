@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 2026-07-10 | Wire ONE_BRAIN_INTAKE_SHADOW into Translation route (default OFF, zero-cost)
+### Added
+- `apps/web/src/app/api/translation/vision-extract/route.ts` — shadow block calling
+  `runIntakeShadow` on the raw first page, gated by `isIntakeShadowEnabled()` (default OFF),
+  checked BEFORE any buffer read/provider build, try/catch fail-open, never alters the response.
+- `vision-extract/__tests__/intakeShadowWiring.test.ts` — source-guard: flag-gated, try/catch,
+  flag-checked-before-buffer, single call.
+- `docs/reports/ONE_BRAIN_SHADOW_OFF_PROOF_2026-07-10.md`.
+### Proof
+- Runtime OFF⇒ran:false/no-provider already covered by shadowRunner.test.ts; route wiring safety +
+  zero-cost-when-OFF covered by the new source-guard test. No paid calls. Stacked on the intake
+  foundation branch (depends on PR #4).
+### Not claimed
+- Not enabled anywhere by default. No flip. Enable only on Preview via ONE_BRAIN_INTAKE_SHADOW=1.
+
 ## 2026-07-10 | One Brain intake foundation lands on mainline (foundation-only, no wiring)
 ### Added
 - 27 One Brain intake files copied onto a fresh branch off main (`docintel/intake/*`,
