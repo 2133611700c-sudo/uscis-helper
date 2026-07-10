@@ -1,0 +1,443 @@
+/**
+ * docReadingRules — per-document-class READING INSTRUCTIONS that TEACH the Gemini
+ * reader how to read each document the way a careful human (or a frontier VLM) reads it.
+ *
+ * WHY this exists: the generic prompt (buildPrompt) tells the model WHAT fields to read,
+ * but not HOW each document writes them. Real-doc analysis (2026-06-22, owner documents,
+ * read directly by Claude) found concrete, repeatable failure modes the generic prompt
+ * does not address — e.g. a Soviet birth certificate writes the date of birth as a
+ * SPELLED-OUT CURSIVE WORD ("двадцать пятого июня"), and the model misreads the cursive
+ * month as the adjacent one (июня→июля). A per-class instruction block fixes that class
+ * of error. These rules are STRICTLY ADDITIONAL guidance — they never tell the model to
+ * guess or to invent; they tell it what to expect and what NOT to confuse.
+ *
+ * Gated by DOC_READING_RULES_ENABLED (default OFF) so prod prompt is unchanged until the
+ * lift is measured on the real-doc harness.
+ *
+ * Provenance: every rule is grounded in a real document the owner provided, cited in the
+ * master plan (docs/architecture/RECOGNITION_MASTER_PLAN_2026-06-22.md, PART 5).
+ */
+
+export interface DocReadingRules {
+  /** One-line language/script expectation for the class. */
+  language: string
+  /** How dates are physically written on this class (the #1 failure surface). */
+  dateGuidance?: string
+  /** Class-level reading rules (each becomes a prompt bullet). */
+  rules: string[]
+}
+
+/**
+ * Cyrillic month words → number, with the ADJACENT-month confusion pairs the model gets
+ * wrong. Read the WHOLE word; do not pattern-match the first letters.
+ */
+const MONTH_WORD_RULE =
+  'MONTHS are often written as a WORD (Ukrainian/Russian), not a number. Read the ENTIRE ' +
+  'month word, every letter — do NOT confuse adjacent months: червня/июня = 06 June (NOT ' +
+  'липня/июля = 07 July); травня/мая = 05 May (NOT березня/марта = 03 March). A wrong month ' +
+  'is the most common error on these documents — be deliberate.'
+
+// RUSSIAN-SCRIPT rule for Soviet/UkrSSR-era documents written in RUSSIAN. The model tends
+// to "helpfully" Ukrainianize a Russian source (Андрей→Андрій). That is a TRANSCRIPTION
+// ERROR for a formal source-faithful translation, which must reflect the document AS WRITTEN.
+const RUSSIAN_SCRIPT_RULE =
+  'RUSSIAN SOURCE — Soviet/UkrSSR-era documents are often written in RUSSIAN, not Ukrainian. ' +
+  'If the script on the page is Russian, transcribe it EXACTLY as Russian — do NOT convert it to ' +
+  'Ukrainian. Keep the Russian letters ы/э/ё/ъ (do not "fix" them to и/е/є/і). Keep Russian name ' +
+  'forms verbatim: Андрей (NOT Андрій), Тимофеевич (NOT Тимофійович), Елена (NOT Олена), ' +
+  'Соловьяк with no apostrophe (NOT Солов’як), Богданович, Петровна. Keep Russian place/' +
+  'oblast forms: Винницкая область (NOT Вінницька), Тростянецкого района (NOT району). Russian ' +
+  'month names января/февраля/марта/апреля/мая/июня/июля/августа/сентября/октября/ноября/декабря ' +
+  'map to 01–12. Do NOT romanize — return the Cyrillic exactly; the correct system (Russian ' +
+  'BGN/PCGN vs Ukrainian KMU-55) is chosen downstream by the source script.'
+
+// SEPARATE, EXPLICIT RUSSIAN-DOCUMENT rule (owner request 2026-06-23). RUSSIAN_SCRIPT_RULE above
+// governs READING (keep the Russian script as written). This rule governs the Russian document as a
+// whole: how its Russian TERMS and PLACES become English, the passport-match for names, and archaic
+// letters. Values are sourced from the RU normative base (Federal Law 143-FZ «Об актах гражданского
+// состояния»; BGN/PCGN). The English glossary lives in packages/knowledge (civil_registry_terms.json
+// `lang: ru` + dictionary RUSSIAN oblast/settlement maps) — the model need only read faithfully; the
+// English rendering is deterministic downstream.
+const RUSSIAN_DOCUMENT_RULE =
+  'RUSSIAN DOCUMENT (separate rule) — Ukrainian/Soviet documents are frequently written in RUSSIAN; ' +
+  'treat Russian as a first-class source language. (1) READ verbatim in Russian (see the Russian-source ' +
+  'rule). (2) TERMS: a Russian header still names the SAME document — «СВИДЕТЕЛЬСТВО О РОЖДЕНИИ» is a ' +
+  'Birth Certificate, «…О БРАКЕ» Marriage, «…О РАСТОРЖЕНИИ БРАКА» Divorce, «…О СМЕРТИ» Death, «…О ' +
+  'ПЕРЕМЕНЕ ИМЕНИ» Name-Change; «ЗАГС/отдел ЗАГС/орган ЗАГС» = Civil Registry Office; «фамилия/имя/' +
+  'отчество» = Surname/Given name/Patronymic (отчество is a Patronymic, NEVER a Middle Name). ' +
+  '(3) PLACES in Ukraine keep the modern UKRAINIAN English form even when written in Russian: ' +
+  '«Винницкая область» → Vinnytsia Oblast (NOT Vinnitsa), «Тростянецкого района» → Trostianets Raion, ' +
+  '«посёлок городского типа/пгт» → urban-type settlement, «село/деревня» → village. ' +
+  '(4) NAMES: the controlling Latin spelling on a passport/MRZ (if present in the same packet) WINS ' +
+  'over re-transliteration (USCIS expects consistency with the passport). (5) ARCHAIC pre-1918 letters ' +
+  '(ѣ/yat, і, ѳ, ѵ) on very old documents read as their modern equivalents (ѣ→е, ѳ→ф, ѵ→и/у, і→и).'
+
+// DOCUMENT-FAMILY FIELD DIFFERENCES — an EXPLANATION rule, NOT a restriction. Different Ukrainian
+// document families legitimately carry DIFFERENT field sets for different legal purposes, so a field
+// that is absent on one document is NOT an error, a "limit", or a conflict with another document.
+//   • INTERNATIONAL passport («…для виїзду за кордон») — a machine-readable travel document built to
+//     ICAO Doc 9303 (КМУ постанова №302-2015; Latin per КМУ №55). Its data page carries STANDARDIZED
+//     ICAO fields only: surname + given name (Cyrillic AND official Latin), passport number, nationality,
+//     sex, date of birth, place of birth (country/oblast level), issue/expiry, issuing authority, MRZ.
+//     ICAO 9303 has NO patronymic field and NO detailed internal birthplace — their ABSENCE is normal.
+//   • INTERNAL / civil-status / Soviet / military / administrative documents (birth/marriage/divorce/
+//     death/name-change certs, internal passport booklet, військовий квиток, ЗАГС/ДРАЦС extracts;
+//     КМУ №1025 etc.) legitimately carry patronymic, detailed place (смт/село, район, область),
+//     registry office, historical authority names, Russian or mixed-Cyrillic forms.
+// HARD RULES: (a) Do NOT treat the absence of patronymic / detailed birthplace on an INTERNATIONAL
+// passport as a defect or as a conflict with an internal document. (b) Do NOT treat the PRESENCE of
+// those fields on an internal document as a conflict with the passport — they are different documents
+// with different normative purposes. (c) NEVER invent an absent field from another document; record it
+// factually as field_not_present_on_document (vs not_visible/present_but_unreadable). (d) The normative
+// reason a field is absent is CONTEXT only — never a source for the missing VALUE.
+const DOC_FAMILY_FIELDS_RULE =
+  'DOCUMENT-FAMILY FIELDS (read what THIS document legitimately has; absence ≠ error) — Ukrainian ' +
+  'document families carry DIFFERENT fields by legal design. An INTERNATIONAL passport (для виїзду за ' +
+  'кордон) is an ICAO Doc 9303 travel document: it has surname/given name in Cyrillic AND official ' +
+  'Latin, passport number, nationality, sex, date of birth, place of birth at country/oblast level, ' +
+  'issue/expiry, and an MRZ — and it legitimately has NO patronymic and NO detailed internal ' +
+  'birthplace (ICAO 9303 has no such field). Do NOT invent them and do NOT mark them as errors. ' +
+  'INTERNAL / civil-status / Soviet / military documents legitimately DO carry patronymic, detailed ' +
+  'place (смт/село, район, область), registry office, and historical/Russian forms — read them in ' +
+  'full. If a field is simply not on this document, report field_not_present_on_document; NEVER copy a ' +
+  'value from another document to fill it, and NEVER treat a different field set as a contradiction.'
+
+export const DOC_READING_RULES: Record<string, DocReadingRules> = {
+  ua_birth_certificate: {
+    language:
+      'May be RUSSIAN (Soviet/UkrSSR era) OR Ukrainian. Transcribe EXACTLY the script that ' +
+      'is on the page — if the certificate is written in Russian (Соловьяк, Андрей, ' +
+      'Тимофеевич), keep the Russian; do NOT Ukrainianize it. If Ukrainian (Солов’як, ' +
+      'Андрій), keep Ukrainian. Never convert one to the other.',
+    dateGuidance:
+      'The date of birth is usually SPELLED OUT in cursive WORDS ("пятнадцатого января ' +
+      'тысяча девятьсот девяностого года" = 15 January 1990), NOT digits. ' +
+      'METHOD (how a careful reader decodes it): FIRST anchor on the YEAR — it is four number-' +
+      'words "(одна) тысяча девятьсот <tens> <units> года" and is the easiest part; read it to ' +
+      'fix the year. THEN read the DAY as an ordinal word (першого/першій=01 … двадцять ' +
+      'п’ятого/двадцать пятого=25 … тридцять першого=31) and the MONTH as a word. Assemble ' +
+      'YYYY-MM-DD. ' + MONTH_WORD_RULE,
+    rules: [
+      'This is a vintage handwritten certificate on a printed form — the LABELS are printed, ' +
+        'the VALUES are handwritten cursive. Read the cursive values letter by letter.',
+      RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
+      'Read ALL parties: child, FATHER full name, MOTHER full name (e.g. "Соловьяк Андрей ' +
+        'Богданович", "Соловьяк Елена Петровна").',
+      'Read the certificate series + number, usually Roman-numeral + letters + digits (e.g. ' +
+        '"II-БК № 530174").',
+      'Place of birth is "пгт/смт/село <Name>, <…> району/района, <…> області/области, УРСР/УССР".',
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
+  // Soviet-era-only variant of the entry above (item 5, 2026-07-06): identical form, PLUS the
+  // "національність"/"национальность" (nationality) line that Soviet-era blanks carry and
+  // modern post-1991 civil-registry forms dropped — kept as a SEPARATE doc type so this line is
+  // never requested on a modern certificate (fabrication risk documented on the shared
+  // ua_birth_certificate registry entry in documentRegistry.ts).
+  ua_birth_certificate_soviet: {
+    language:
+      'May be RUSSIAN (Soviet/UkrSSR era) OR Ukrainian. Transcribe EXACTLY the script that ' +
+      'is on the page — if the certificate is written in Russian (Соловьяк, Андрей, ' +
+      'Тимофеевич), keep the Russian; do NOT Ukrainianize it. If Ukrainian (Солов’як, ' +
+      'Андрій), keep Ukrainian. Never convert one to the other.',
+    dateGuidance:
+      'The date of birth is usually SPELLED OUT in cursive WORDS ("пятнадцатого января ' +
+      'тысяча девятьсот девяностого года" = 15 January 1990), NOT digits. ' +
+      'METHOD (how a careful reader decodes it): FIRST anchor on the YEAR — it is four number-' +
+      'words "(одна) тысяча девятьсот <tens> <units> года" and is the easiest part; read it to ' +
+      'fix the year. THEN read the DAY as an ordinal word (першого/першій=01 … двадцять ' +
+      'п’ятого/двадцать пятого=25 … тридцять першого=31) and the MONTH as a word. Assemble ' +
+      'YYYY-MM-DD. ' + MONTH_WORD_RULE,
+    rules: [
+      'This is a vintage handwritten certificate on a printed form — the LABELS are printed, ' +
+        'the VALUES are handwritten cursive. Read the cursive values letter by letter.',
+      RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
+      'Read ALL parties: child, FATHER full name, MOTHER full name (e.g. "Соловьяк Андрей ' +
+        'Богданович", "Соловьяк Елена Петровна").',
+      'This Soviet-era blank carries a "національність"/"национальность" (nationality) line ' +
+        'for each parent (e.g. "українець"/"украинец", "росіянин"/"русский") — read it if ' +
+        'present; report field_not_present_on_document if the line is blank or absent.',
+      'Read the certificate series + number, usually Roman-numeral + letters + digits (e.g. ' +
+        '"II-БК № 530174").',
+      'Place of birth is "пгт/смт/село <Name>, <…> району/района, <…> області/области, УРСР/УССР".',
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
+  ua_internal_passport_booklet: {
+    language: 'Ukrainian (handwritten identity page of the old booklet).',
+    dateGuidance:
+      'Date may be handwritten digits or a stamp. ' + MONTH_WORD_RULE,
+    rules: [
+      'Handwritten identity page — read names letter by letter; the patronymic is often the ' +
+        'hardest field (do NOT return a bare suffix like "ович").',
+      RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
+  ua_international_passport: {
+    language:
+      'Bilingual PRINTED biometric passport: Cyrillic + the official LATIN romanization + MRZ.',
+    dateGuidance:
+      'Dates are printed (e.g. "15 СІЧ/JAN 90"). The MRZ second line encodes YYMMDD with a ' +
+      'check digit (e.g. 9001158 = 1990-01-15, check digit 8) — it is the authoritative date.',
+    rules: [
+      'The LATIN spelling printed on the document and in the MRZ is CONTROLLING — return it ' +
+        'EXACTLY as printed (e.g. "SOLOVIAK"); do NOT re-transliterate it yourself (do NOT turn ' +
+        'SOLOVIAK into SOLOVYAK).',
+      'The MRZ is the math anchor: read both MRZ lines verbatim; they validate surname, given ' +
+        'name, passport number, date of birth and sex.',
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
+  ua_military_id: {
+    language: 'Ukrainian (Андрій/Андрійович forms), handwritten on a printed booklet.',
+    dateGuidance:
+      'Date of birth is handwritten — the month is usually a cursive WORD (червня = June). ' +
+      MONTH_WORD_RULE,
+    rules: [
+      'The page is OFTEN PHOTOGRAPHED ROTATED 90°/180° — mentally rotate upright first.',
+      'Series + number is "<2 Cyrillic letters> ######" (e.g. "НК 307258").',
+      'Place of birth is "сел./смт <Name>, <oblast> обл."; marital status may be "неодружений".',
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
+  ua_marriage_certificate: {
+    language: 'Modern = PRINTED Ukrainian (high accuracy); vintage = handwritten.',
+    dateGuidance: MONTH_WORD_RULE,
+    rules: [
+      RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
+      'Read BOTH spouses (surname/given/patronymic + each birth date + birth place), the ' +
+        'marriage date, the act-record number, the registering RAGS/DRACS office, and the ' +
+        'serial (e.g. "I-БК № 153243"). Note the surname each spouse takes after marriage.',
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
+  ua_divorce_certificate: {
+    language: 'Ukrainian; modern printed or vintage handwritten. May be marked "ПОВТОРНО".',
+    dateGuidance: MONTH_WORD_RULE,
+    rules: [
+      RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
+      'Read both former spouses, the dissolution date, the act-record number, the registering ' +
+        'office, and the serial (e.g. "I-БК № 18…"). Some copies are PII-redacted (greyed ' +
+        'boxes) — leave redacted fields EMPTY, never guess under a redaction.',
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
+  ua_death_certificate: {
+    language:
+      'Ukrainian (Свідоцтво про смерть) or Russian (Свидетельство о смерти); vintage = ' +
+      'handwritten on a printed form. Transcribe the script as written; do not convert RU↔UA.',
+    dateGuidance:
+      'TWO distinct dates: date of birth and DATE OF DEATH — read each from its own location, ' +
+      'never copy one into the other. ' + MONTH_WORD_RULE,
+    rules: [
+      RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
+      'Read the deceased: surname / given / patronymic (e.g. "Солов’як Андрій Андрійович").',
+      'place_of_death is "м./смт/село <Name>, <oblast> область".',
+      'Read the act-record number, the registering RAGS/DRACS office, and the serial ' +
+        '(Roman + letters + digits, e.g. "I-АМ № 123456").',
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
+  ua_name_change_certificate: {
+    language: 'Ukrainian/Russian; vintage = handwritten (Свідоцтво про зміну імені).',
+    dateGuidance: MONTH_WORD_RULE,
+    rules: [
+      RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
+      'There are TWO name sets — the PREVIOUS name and the NEW name. Read both fully and keep ' +
+        'them in their own fields; never merge them (e.g. previous "Іванов Іван Іванович" → ' +
+        'new "Петренко Іван Іванович").',
+      'Read the act-record number, registering office, and serial.',
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
+  ua_id_card: {
+    language:
+      'Modern PLASTIC ID card (ID-1), machine-printed Ukrainian; carries a TD1 MRZ on the back.',
+    dateGuidance:
+      'Dates are printed DD.MM.YYYY. The TD1 MRZ (3 lines × 30 chars) encodes the record number, ' +
+      'DOB (YYMMDD + check digit) and expiry — it is the math anchor.',
+    rules: [
+      'Read the printed Cyrillic names; if an official Latin transliteration is printed, return ' +
+        'it EXACTLY (controlling). The record number is a 9-digit number (e.g. "001234567").',
+      'High-accuracy printed class — but still cross-check DOB/number against the TD1 MRZ.',
+      DOC_FAMILY_FIELDS_RULE,
+    ],
+  },
+
+  us_ead: {
+    language: 'US Employment Authorization Document (Form I-766), machine-printed ENGLISH.',
+    dateGuidance:
+      'Dates are printed MM/DD/YYYY (e.g. "Card Expires 03/15/2026"). Two dates: valid-from and ' +
+      'card-expires — keep them separate.',
+    rules: [
+      'A-Number (USCIS #): "A" + 9 digits, often shown as "A### ### ###" (e.g. A123456789) — ' +
+        'return digits only, preserve all 9.',
+      'Card # (USCIS card number): 3 letters + 10 digits (e.g. "SRC2290012345").',
+      'CATEGORY is a code, NOT free text — e.g. "C08", "C09", "A12", "C19" (C19/A12 = TPS); ' +
+        'read it EXACTLY (letter+digits), do not interpret it.',
+      'Names are printed in the document’s controlling Latin — return as printed.',
+    ],
+  },
+
+  us_i94: {
+    language: 'US I-94 Arrival/Departure Record, machine-printed ENGLISH (web printout or stamp).',
+    dateGuidance:
+      'Dates often "YYYY Month DD" or MM/DD/YYYY. "Admit Until Date" may be a date OR the text ' +
+      '"D/S" (Duration of Status) — if it says D/S, return "D/S", do not invent a date.',
+    rules: [
+      'Admission (I-94) Number: 11 characters (digits, sometimes with a trailing letter) — ' +
+        'read ALL 11, e.g. "12345678901".',
+      'Class of Admission is a visa code (e.g. "B2", "F1", "H1B", "TPS") — read exactly.',
+      'Port of entry is a US city/airport (e.g. "CHICAGO, IL").',
+    ],
+  },
+
+  us_i797: {
+    language: 'US Form I-797 Notice of Action (USCIS), machine-printed ENGLISH.',
+    dateGuidance: 'Dates are printed MM/DD/YYYY (Notice Date, Received Date, Valid From/To).',
+    rules: [
+      'Receipt Number: 3 letters + 10 digits — the prefix is a service-center code ' +
+        '(EAC/WAC/SRC/MSC/LIN/IOE), e.g. "IOE1234567890". Read all 13 characters exactly.',
+      'A-Number: "A" + 9 digits (e.g. A123456789). USCIS Online Account Number is a separate ' +
+        '12-digit number — do not confuse the two.',
+      'Notice type / form number (e.g. "I-765", "I-821") and the validity window may be present.',
+    ],
+  },
+}
+
+/**
+ * Build the per-document reading-rules block to append to the Gemini prompt.
+ * Empty string when the class has no rules or the flag is off (caller gates).
+ */
+export function readingRulesPromptBlock(docTypeId: string): string {
+  const r = DOC_READING_RULES[docTypeId]
+  if (!r) return ''
+  const lines: string[] = []
+  lines.push(`\nDOCUMENT-SPECIFIC READING RULES for this ${docTypeId}:`)
+  lines.push(`- LANGUAGE/SCRIPT: ${r.language}`)
+  if (r.dateGuidance) lines.push(`- DATES: ${r.dateGuidance}`)
+  for (const rule of r.rules) lines.push(`- ${rule}`)
+  return lines.join('\n')
+}
+
+// ── L9: SAME source, taught to a TEXT-ONLY model (DeepSeek) ───────────────────
+//
+// DeepSeek never sees pixels (Constitution L3 / RECOGNITION_ORG_CHART D3: it is a TEXT
+// structurer, never an identity authority). So when we teach it from the SAME codex the
+// Gemini reader uses, we must hand it ONLY the text-relevant rules and DROP the pure-image
+// guidance that is meaningless to a text model:
+//   KEEP — RUSSIAN_SCRIPT_RULE (transcribe RU as written, keep Андрей/Тимофеевич, RU months
+//          →01-12), the spelled-out-date METHOD (anchor on the year-words, then day-ordinal +
+//          month-word → YYYY-MM-DD), the "present-but-hard → best-effort, never drop a present
+//          field; never invent an absent one" principle, the language/script note, and the
+//          per-field examples.
+//   DROP — orientation/rotation, "read … from the pixels / letter by letter", and the
+//          "[HANDWRITTEN cursive]" pixel markers.
+//
+// IMAGE_ONLY_SENTENCE: a full rule bullet that is ENTIRELY about pixels — dropped whole.
+const IMAGE_ONLY_SENTENCE = [
+  /photographed\s+rotated/i, // "OFTEN PHOTOGRAPHED ROTATED 90°/180°"
+  /rotate\s+upright/i,
+  /\brotated?\b.*\bupright\b/i,
+]
+
+// IMAGE_ONLY_CLAUSE: a pixel-bound clause embedded inside an otherwise text-useful rule —
+// stripped in place, leaving the text-relevant remainder intact. Each is matched against a
+// single trailing clause so the remaining sentence is still well-formed.
+const IMAGE_ONLY_CLAUSE_REPLACERS: Array<[RegExp, string]> = [
+  // "Read the cursive values letter by letter." → drop (pure pixel instruction).
+  [/\s*Read the cursive values letter by letter\.?/gi, ''],
+  // "read names letter by letter; " → drop the pixel half, keep the rest.
+  [/\s*read names letter by letter;\s*/gi, ' '],
+  // generic "read … letter by letter from the pixels" fragments.
+  [/\s*,?\s*read(?:ing)?[^.;]*letter by letter[^.;]*(?=[.;]|$)/gi, ''],
+  // the "[HANDWRITTEN cursive]" pixel marker, meaningless to a text model.
+  [/\s*\[HANDWRITTEN cursive\]\s*/gi, ' '],
+]
+
+const TEXT_BEST_EFFORT_RULE =
+  'PRESENT-BUT-HARD → BEST-EFFORT: if a field is present in the text but garbled/ambiguous, ' +
+  'give your best-effort reading and flag low confidence — never DROP a field that is present, ' +
+  'and never INVENT a field that is absent. A missing field is reported missing; it is never ' +
+  'fabricated.'
+
+/** A rule bullet that is ENTIRELY about pixels (orientation/rotation) — legitimately absent from the
+ *  text-only DeepSeek block. Used by the Gemini↔DeepSeek sync guard to allow these (and only these)
+ *  to be dropped. Exported so the guard test stays in lock-step with the real drop logic. */
+export function isImageOnlyRule(rule: string): boolean {
+  return IMAGE_ONLY_SENTENCE.some((re) => re.test(rule))
+}
+
+/** Strip a single rule string of image-only clauses; collapse leftover whitespace.
+ * Exported so the Gemini↔DeepSeek sync guard mirrors the EXACT legitimate-drop set (no drift). */
+export function stripImageOnlyClauses(rule: string): string {
+  let out = rule
+  for (const [re, repl] of IMAGE_ONLY_CLAUSE_REPLACERS) out = out.replace(re, repl)
+  return out.replace(/\s{2,}/g, ' ').replace(/\s+([.;,])/g, '$1').trim()
+}
+
+/**
+ * textRulesForDeepSeek — the SAME per-document reading rules the Gemini reader gets, but with
+ * the pure-IMAGE guidance removed, for the TEXT-ONLY DeepSeek structurer (L9 + L3).
+ *
+ * Returns a non-empty prompt block for a known class, or '' for an unknown/uncovered class.
+ * Never throws.
+ */
+export function textRulesForDeepSeek(docTypeId: string): string {
+  const r = DOC_READING_RULES[docTypeId]
+  if (!r) return ''
+  const lines: string[] = []
+  lines.push(`\nSHARED DOCUMENT READING RULES (text-only) for this ${docTypeId}:`)
+  lines.push(`- LANGUAGE/SCRIPT: ${r.language}`)
+  if (r.dateGuidance) {
+    // dateGuidance is the spelled-out-date METHOD + month rule — fully text-relevant, kept verbatim.
+    lines.push(`- DATES: ${r.dateGuidance}`)
+  }
+  for (const rule of r.rules) {
+    // Drop bullets that are ENTIRELY about pixels (orientation/rotation).
+    if (IMAGE_ONLY_SENTENCE.some((re) => re.test(rule))) continue
+    const cleaned = stripImageOnlyClauses(rule)
+    // A bullet may reduce to nothing once its only content was a pixel instruction.
+    if (cleaned.length === 0) continue
+    lines.push(`- ${cleaned}`)
+  }
+  // Always teach the present-but-hard / never-drop / never-invent principle (text-safe).
+  lines.push(`- ${TEXT_BEST_EFFORT_RULE}`)
+  return lines.join('\n')
+}
+
+// DEFAULT ON (2026-06-22): the per-document reading rules are proven to fix real reads
+// (Soviet birth-cert DOB "26 июля"→"25 июня", 2/2 live) and are strictly-additive guidance
+// per document class — so they are active by default for ALL products (translation, TPS,
+// EAD, Re-Parole all read through the shared readDocument → buildPrompt). Set
+// DOC_READING_RULES_ENABLED=0 to disable (rollback without a code change).
+export function isDocReadingRulesEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DOC_READING_RULES_ENABLED !== '0'
+}
+
+// L9 DeepSeek shared-rules flag. DEFAULT OFF (opt-in): when unset/!=="1", the DeepSeek
+// (documentBrain) system prompt is BYTE-IDENTICAL to today (no shared block appended). Set
+// DEEPSEEK_SHARED_RULES_ENABLED=1 to append textRulesForDeepSeek() for the doc class. This
+// gate is the L10 safe-change discipline for L9's DeepSeek-sharing extension.
+export function isDeepSeekSharedRulesEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return env.DEEPSEEK_SHARED_RULES_ENABLED === '1'
+}

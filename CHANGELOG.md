@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 2026-07-10 | One Brain intake foundation lands on mainline (foundation-only, no wiring)
+### Added
+- 27 One Brain intake files copied onto a fresh branch off main (`docintel/intake/*`,
+  `detectLanguageCountry.ts`, `detectDocumentType.ts`, `orientation/detectOrientation.ts`,
+  `docReadingRules.ts`, `api/diag/intake/route.ts`, 12 tests). All were ABSENT on main.
+- `docs/audit/ONE_BRAIN_MAINLINE_INTEGRATION_2026-07-10.md` — why copied not merged (main and
+  the prototype branch have NO common git ancestor after the PII-purge repo recreate; merging
+  would risk re-introducing purged PII), the 27-file set, static verification.
+### Verified (static, node_modules absent → CI is authoritative)
+- 27/27 files parse; 50 internal imports, 0 unresolved paths.
+- 4 seam modules on main, all 8 imported symbols present.
+- Intake tests self-contained (no PII/fixtures).
+### Not done / not claimed
+- No production wiring (nothing calls the foundation). No flip. Not family-trusted. Not N>=25.
+  Translation shadow hook + shadow-off proof = a later separate PR.
+
 ## 2026-07-09 | CI: controlled-skip for owner-PII scan when secret absent (PR #2)
 ### Changed
 - `.github/workflows/guards.yml` — the "Block real owner PII" step no longer hard-fails (`exit 1`)
