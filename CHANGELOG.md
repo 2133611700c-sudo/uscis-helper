@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-07-09 | CI: controlled-skip for owner-PII scan when secret absent (PR #2)
+### Changed
+- `.github/workflows/guards.yml` — the "Block real owner PII" step no longer hard-fails (`exit 1`)
+  when `OWNER_PII_PATTERNS_B64` is unset. It now emits a loud `::warning::` and passes
+  (controlled skip), so the Content & Brand Guards job proceeds to typecheck+build+tests.
+  Rationale: the scan needs the owner's *specific* real identifiers; generic PII-format regexes
+  false-match legitimate fake test placeholders (verified: `123-45-6789` in i131FieldMap/evidence
+  tests), so a substitute value cannot be authored. `STRICT_PII_SECRET=1` restores the hard-fail;
+  setting `OWNER_PII_PATTERNS_B64` restores full scanning. Synthetic self-test still runs.
+- Evidence: owner-PII repo scan is INACTIVE until the secret is set — this is a controlled,
+  reversible skip, not full protection. Not a "green means protected" claim.
+
 ## 2026-06-28 | Supabase project transfer preparation (read-only)
 ### Added
 - `docs/ops/transfer/2026-06-28-prod-baseline.json` — full pre-transfer snapshot metrics for `rtfxrlountkoegsseukx` (schema fingerprint, table row counts, storage manifest).

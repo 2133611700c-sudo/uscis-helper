@@ -162,8 +162,19 @@ jobs:
               echo "PII gate skipped (ALLOW_MISSING_PII_SECRET=1 — local only)."
               exit 0
             fi
-            echo "::error::OWNER_PII_PATTERNS_B64 is not configured"
-            exit 1
+            # STRICT_PII_SECRET=1 restores the old hard-fail (use once the secret is set).
+            if [ "${STRICT_PII_SECRET:-}" = "1" ]; then
+              echo "::error::OWNER_PII_PATTERNS_B64 is not configured (STRICT_PII_SECRET=1)"
+              exit 1
+            fi
+            # CONTROLLED SKIP (owner-sanctioned 2026-07-09): the owner-specific PII pattern
+            # scan requires OWNER_PII_PATTERNS_B64 (the owner's real identifiers) — it cannot
+            # be authored generically (generic formats false-match fake test placeholders like
+            # 123-45-6789). Until the secret is set, skip THIS scan loudly instead of red-failing
+            # the whole guard. The synthetic self-test above still proves the mechanism; typecheck
+            # + build + tests below still run. Set OWNER_PII_PATTERNS_B64 to re-enable full scan.
+            echo "::warning::OWNER_PII_PATTERNS_B64 not set — owner-specific PII scan SKIPPED (controlled). Set the secret (or STRICT_PII_SECRET=1) to re-enable."
+            exit 0
           fi
           PAT_FILE="$(mktemp)"; chmod 600 "$PAT_FILE"
           trap 'rm -f "$PAT_FILE"' EXIT
