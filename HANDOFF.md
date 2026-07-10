@@ -1,3 +1,13 @@
+# HANDOFF (2026-07-10 — P9 recognition-reality report)
+
+## 2026-07-10 | P9: recognition-reality report
+- Branch `feat/one-brain-recognition-reality`. Doc separates intake detection (B, not wired) from
+  field recognition (A, LIVE on main). Handwriting = draft-only/force-review; honest gaps: no
+  printed-value accuracy or handwritten CER at N>=25. Zero paid calls.
+- NEXT: after PR #6 (shadow wiring) merges, run P8 shadow window on Preview (raw birth cert,
+  incognito, small N), then collect N>=25/family.
+
+<!-- prior handoff below -->
 # HANDOFF (2026-07-10 — One Brain intake foundation onto mainline)
 
 ## 2026-07-10 | One Brain intake foundation transplanted to main history

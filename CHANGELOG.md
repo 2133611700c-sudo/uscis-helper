@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-07-10 | P9: recognition-reality report (docType detection != field recognition)
+### Added
+- `docs/reports/ONE_BRAIN_RECOGNITION_REALITY_2026-07-10.md` — separates intake detection (system B,
+  not wired) from field recognition (system A, LIVE on main): what auto-fills vs force-reviews,
+  handwriting = draft-only/force-review, and the honest field-metric gaps (no printed-value accuracy
+  or handwritten CER at N>=25). No new paid calls; reconciles existing code + committed reports.
+
 ## 2026-07-10 | One Brain intake foundation lands on mainline (foundation-only, no wiring)
 ### Added
 - 27 One Brain intake files copied onto a fresh branch off main (`docintel/intake/*`,
