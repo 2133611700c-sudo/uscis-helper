@@ -3,6 +3,23 @@ Purpose: define canonical modules. Prevent duplication. Stop re-litigation.
 
 > **LIVE V1 PROGRAM TRACKER:** GitHub issue #159 "USCIS HELPER V1 — FINAL DELIVERY PROGRAM" is the single source of release-gate truth. DONE: #161 (OCR coordination wired to live path, off by default), #160 (isolated staging LIVE + runtime-proven — Supabase `rxnlpvldngxgdxkxoaaj` + Vercel preview, `V1_STAGING_READY=true`, ADR-023). PR #119 (Translation V2) = KEEP_DRAFT→REBUILD_FROM_MAIN→supersede. NEXT: product browser E2E (TPS first). Staging deploy = `.github/workflows/staging-deploy.yml` (`vercel deploy -e/-b`); staging DB provision = `.github/workflows/staging-provision.yml`. V1 verdict: **NOT_READY** (E2E/visual/Stripe-test/canary gates pending).
 
+## Current One Brain Truth (2026-07-10)
+
+Treat the following four documents together as the current One Brain source of truth:
+
+- `docs/audit/ONE_BRAIN_MAINLINE_INTEGRATION_2026-07-10.md`
+- `docs/reports/P8A_MAINLINE_ZERO_COST_VERIFY_2026-07-10.md`
+- `docs/reports/ONE_BRAIN_RECOGNITION_REALITY_2026-07-10.md`
+- `docs/reports/P8A_LIVE_PREVIEW_SHADOW_SMOKE_2026-07-10.md`
+
+What they establish, together:
+
+- `#4`, `#6`, and `#8` are really on `main`; One Brain is not just a side-branch prototype anymore.
+- Green CI and merged code prove mergeability/buildability, not live accuracy.
+- Intake detection and field recognition are different subsystems and must not be reported as one metric.
+- Live Preview proof now exists for the merged intake path on the real Soviet birth certificate.
+- Translation response parity with shadow ON is proven only for the degraded live state seen in this turn (`OCR_RATE_LIMITED` on both Preview and Production). A successful field-read parity proof remains `UNVERIFIED`.
+
 ## Canonical normalization layer
 - `packages/knowledge/src/dictionary.ts` — authorities, geography, field labels, oblasts, blocklist
 - `packages/knowledge/src/normalize.ts` — normalizeName, normalizeDate, normalizeSex, normalizeAuthority, normalizePlace, validateOutput

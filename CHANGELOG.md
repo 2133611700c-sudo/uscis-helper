@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-07-10 | P8-A live Preview smoke + clean One Brain source-of-truth bundle
+- Added `docs/reports/P8A_MAINLINE_ZERO_COST_VERIFY_2026-07-10.md` — evidence-only verification that `#4`, `#6`, and `#8` are merged on `origin/main`; Translation shadow hook exists on main and is default-OFF by code; `ua_birth_certificate_soviet` is present in the live catalog/rules; Preview has `ONE_BRAIN_INTAKE_SHADOW=1` and `DIAG_ORIENT_ENABLED=1`, Production does not.
+- Added `docs/reports/ONE_BRAIN_RECOGNITION_REALITY_2026-07-10.md` — the clean docs-only truth: intake detection != field recognition; handwriting remains review-only; green CI/mainline presence do not prove live accuracy.
+- Added `docs/reports/P8A_LIVE_PREVIEW_SHADOW_SMOKE_2026-07-10.md` — live Preview proof on the real Soviet birth certificate after `#8`: mainline intake detection works live (`SU / soviet_legacy`, `ua_birth_certificate_soviet`, `needs_review`, PII-free trace), Preview/Production Translation parity is preserved in the degraded live state (`OCR_RATE_LIMITED` on both), and the honest residuals are recorded (Preview ingress payload ceiling, no successful field-read in this turn, runtime shadow-log capture still UNVERIFIED).
+
 ## 2026-07-10 | fix(intake): docType catalog built from signatures (Soviet birth cert regression)
 - Live P8 run on Preview classified a real Soviet birth certificate as docType=`unknown` (family_unknown/doc_type_unknown) though language/country/pageSide were correct. Root cause: `knownTypeCatalog()` built the model's offered list from the field-reader `DOCUMENT_TYPES` registry, which lacks `ua_birth_certificate_soviet` on this branch, while `normalizeDetection` accepts from `DOC_TYPE_SIGNATURES`. Catalog now built from `DOC_TYPE_SIGNATURES` (advertised set == accepted set). + regression test `detectDocumentTypeCatalog.test.ts`. Found only by the live run; CI unit/typecheck were green.
 
