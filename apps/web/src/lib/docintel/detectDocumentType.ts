@@ -16,7 +16,6 @@
  * guessed wrong type. Own architecture is core: the candidate set is the docintel registry
  * (single source of truth); the model only picks among known ids by their printed identity.
  */
-import { DOCUMENT_TYPES } from './documentRegistry'
 
 export interface DocTypeDetection {
   doc_type_id: string | 'unknown'
@@ -57,9 +56,11 @@ export function docTypeDetectEnabled(env: Record<string, string | undefined> = p
 
 /** The candidate list handed to the model — registry ids that have a signature, PII-free. */
 export function knownTypeCatalog(): Array<{ id: string; signature: string }> {
-  return Object.keys(DOCUMENT_TYPES)
-    .filter((id) => DOC_TYPE_SIGNATURES[id])
-    .map((id) => ({ id, signature: DOC_TYPE_SIGNATURES[id] }))
+  // Source of truth = DOC_TYPE_SIGNATURES (same set normalizeDetection accepts). Building from the
+  // field-reader DOCUMENT_TYPES registry silently dropped intake-only types that have a signature
+  // but no field-reader spec on this branch (e.g. ua_birth_certificate_soviet) — the model was
+  // never offered them, so a Soviet birth certificate classified as 'unknown' (measured live 2026-07-10).
+  return Object.keys(DOC_TYPE_SIGNATURES).map((id) => ({ id, signature: DOC_TYPE_SIGNATURES[id] }))
 }
 
 export function buildDocTypePrompt(): string {

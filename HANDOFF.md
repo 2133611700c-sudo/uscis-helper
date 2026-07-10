@@ -1,3 +1,4 @@
+<!-- 2026-07-10 fix: intake docType catalog from signatures (Soviet birth cert was 'unknown' live); branch fix/intake-doctype-catalog-soviet; re-proving on Preview. -->
 # HANDOFF (2026-07-10 — Translation intake shadow wiring, default OFF)
 
 ## 2026-07-10 | P4: ONE_BRAIN_INTAKE_SHADOW wired into Translation route (default OFF)

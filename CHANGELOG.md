@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-07-10 | fix(intake): docType catalog built from signatures (Soviet birth cert regression)
+- Live P8 run on Preview classified a real Soviet birth certificate as docType=`unknown` (family_unknown/doc_type_unknown) though language/country/pageSide were correct. Root cause: `knownTypeCatalog()` built the model's offered list from the field-reader `DOCUMENT_TYPES` registry, which lacks `ua_birth_certificate_soviet` on this branch, while `normalizeDetection` accepts from `DOC_TYPE_SIGNATURES`. Catalog now built from `DOC_TYPE_SIGNATURES` (advertised set == accepted set). + regression test `detectDocumentTypeCatalog.test.ts`. Found only by the live run; CI unit/typecheck were green.
+
 ## 2026-07-10 | Wire ONE_BRAIN_INTAKE_SHADOW into Translation route (default OFF, zero-cost)
 ### Added
 - `apps/web/src/app/api/translation/vision-extract/route.ts` — shadow block calling
