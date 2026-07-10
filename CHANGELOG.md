@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-07-10 | Monitor: email delivery degrades gracefully instead of RED-failing the job
+### Changed
+- `scripts/monitoring/lib/email.ts` — `sendDigest` no longer throws when Resend rejects the send.
+  The monitoring step already succeeded (alerts collected); a dead/invalid `RESEND_API_KEY` should
+  not turn the whole Federal Register Monitor job RED. On send failure it now logs a loud
+  `::warning::` + the full digest to the run output (content preserved) and returns success.
+  `EMAIL_STRICT=1` restores the old hard-fail.
+- Root cause (verified by direct Resend API test): stored `RESEND_API_KEY` was corrupted with a
+  trailing literal `\n` (→ 400) AND revoked (cleaned key → 401 on GET /domains). A valid key must
+  be created by the owner in the resend.com dashboard (agent cannot mint one). Email = DEGRADED
+  (loud warning each run), not silently green.
+
 ## 2026-07-09 | CI: controlled-skip for owner-PII scan when secret absent (PR #2)
 ### Changed
 - `.github/workflows/guards.yml` — the "Block real owner PII" step no longer hard-fails (`exit 1`)

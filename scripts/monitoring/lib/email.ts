@@ -26,6 +26,18 @@ export async function sendDigest(html: string, subject: string): Promise<void> {
 
   if (!response.ok) {
         const body = await response.text().catch(() => '<unreadable>')
-        throw new Error(`Email failed: ${response.status} ${response.statusText} — ${body}`)
+        const msg = `Email failed: ${response.status} ${response.statusText} — ${body}`
+        // EMAIL_STRICT=1 restores the old hard-fail. Default (2026-07-10): degrade gracefully.
+        // The monitoring itself already ran; a dead/invalid RESEND key should NOT turn the whole
+        // job RED. Log the digest to the run output (content preserved) + a loud ::warning:: so the
+        // broken key stays visible on every run. Real delivery resumes once a valid key is set.
+        if (process.env.EMAIL_STRICT === '1') {
+                throw new Error(msg)
+        }
+        console.log(`::warning::${msg} — digest delivery DEGRADED (set a valid RESEND_API_KEY to re-enable). Digest logged below instead:`)
+        console.log('To:', to)
+        console.log('Subject:', subject)
+        console.log(html)
+        return
   }
 }

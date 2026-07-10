@@ -1,3 +1,19 @@
+# HANDOFF (2026-07-10 — monitor email degrade + Resend root cause proven)
+
+## 2026-07-10 | Federal Register Monitor red — root cause proven + graceful degrade
+- Proven by DIRECT Resend API test (not assumption): stored RESEND_API_KEY corrupted with trailing
+  literal `\n` (→ HTTP 400 validation_error) AND revoked (cleaned key → HTTP 401 on GET
+  https://api.resend.com/domains). Same invalid value in GitHub secret + all Vercel envs.
+- Agent CANNOT create a Resend key: no resend.com dashboard access, and POST /api-keys needs an
+  existing valid key (all 401). Only the owner can mint one in the dashboard.
+- ACTION (code, branch fix/monitor-email-degrade → PR): scripts/monitoring/lib/email.ts sendDigest
+  degrades on send failure — loud ::warning:: + digest logged to run output + success exit, so the
+  dead key no longer REDs the whole job. EMAIL_STRICT=1 restores hard-fail.
+- NEXT (owner): resend.com → new API key → set CLEAN (no trailing \n):
+  `printf '%s' 're_KEY' | gh secret set RESEND_API_KEY --repo 2133611700c-sudo/uscis-helper`
+  + update the same in Vercel (Prod/Preview/Dev, no \n); verify messenginfo.com domain. Rerun monitor.
+
+<!-- prior handoff below -->
 # HANDOFF (2026-07-09 — CI guards green-up: controlled-skip for owner-PII secret)
 
 ## 2026-07-09 | Infra truth + PR #2 Content & Brand guard
