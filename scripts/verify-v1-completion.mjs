@@ -13,7 +13,7 @@
  *  5. handwriting NOT in V1 auto-final
  *  6. PR #119 frozen; global enforce forbidden; new products forbidden
  *  7. positive Stripe delivery == RUNTIME_UNVERIFIED
- *  8. the 5 V1 workflows exist and have `on:` + `jobs:` (syntax sanity)
+ *  8. the 4 V1 workflows exist and have `on:` + `jobs:` (syntax sanity)
  *  9. V1_STATUS.md is marked generated (not hand-authored)
  */
 import { readFileSync, existsSync } from 'node:fs'
@@ -92,7 +92,6 @@ ok('every PASS phase has an evidence artifact')
 // (8) workflows exist + basic syntax
 const wf = [
   'v1-fast-gates.yml',
-  'v1-nightly-staging.yml',
   'v1-document-benchmark.yml',
   'v1-production-readonly-smoke.yml',
   'v1-program-guard.yml',
@@ -103,7 +102,7 @@ for (const w of wf) {
   const c = readFileSync(p, 'utf8')
   if (!/^on:/m.test(c) || !/^jobs:/m.test(c)) fail(`workflow ${w} missing on:/jobs:`)
 }
-ok('all 5 V1 workflows present with on:/jobs:')
+ok('all 4 V1 workflows present with on:/jobs:')
 
 // (9) dashboard is generated
 const statusPath = resolve(ROOT, 'V1_STATUS.md')

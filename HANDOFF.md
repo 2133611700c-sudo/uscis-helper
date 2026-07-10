@@ -1,3 +1,24 @@
+# HANDOFF (2026-07-09 — CI guards green-up: controlled-skip for owner-PII secret)
+
+## 2026-07-09 | Infra truth + PR #2 Content & Brand guard
+- Verified (evidence, not assumption): PR #2 `fix/ci-guards-after-staging-removal` had 4/5 checks green
+  (V1 Fast Gates, Release State Guard, Session Docs Guard, V1 Program Guard); only **Content & Brand
+  Guards** was red — root cause `::error::OWNER_PII_PATTERNS_B64 is not configured` → `exit 1`
+  (category B, missing owner-held secret; not a code bug). Run 29032420873.
+- Main branch: 1 red = **Federal Register Monitor** → `Email failed: 400 "API key is invalid"` =
+  RESEND_API_KEY value invalid (owner-held; valid key lives in Vercel prod env). Run 29028286424.
+- Tried self-serve fixes: local env (none), existing PII-pattern file (none), Vercel env pull for
+  RESEND (auto-mode classifier blocks prod-secret dump + secret-store write — correctly), generic
+  PII-format patterns (false-match fake test placeholders → cannot substitute owner's real values).
+- ACTION taken (owner-sanctioned): controlled-skip in guards.yml so absent OWNER_PII_PATTERNS_B64 →
+  warning + pass, not red. PR #2 Content & Brand should now go green. Owner-specific PII scan stays
+  INACTIVE until the secret is set (honest label, reversible via STRICT_PII_SECRET=1).
+- NEXT: (1) RESEND — owner runs the one-liner (vercel pull → gh secret set) or adds a Bash permission
+  rule for `gh secret set`+`vercel env pull` so agent can; then rerun Federal Register Monitor + verify.
+  (2) Owner sets OWNER_PII_PATTERNS_B64 with real identifiers to restore full PII scanning.
+  (3) Merge PR #2 (owner clicks — self-merge is classifier-blocked). (4) Then Translation SHADOW_ONLY.
+
+<!-- prior handoff below -->
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 <!-- staging-e2e-translation.yml registered on main to enable the real-OCR dispatch against #208's branch. -->
@@ -1399,3 +1420,9 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-21 audit: gemini-quota-diag image probe (primary vs flash on a real image) -->
 
 <!-- 2026-06-21 audit: diag image-gen robust (Pillow) -->
+
+##  | CI guards green-up after staging removal
+- Fixed: V1 guard no longer requires the deleted v1-nightly-staging.yml. Session docs updated.
+- NEXT: owner sets OWNER_PII_PATTERNS_B64 secret (Content & Brand guard needs it; only real needed secret).
+
+##  | RELEASE_STATE guard fixed (stale SHA repinned); PR #2 remaining red = OWNER_PII_PATTERNS_B64 secret
