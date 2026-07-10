@@ -1,3 +1,17 @@
+# HANDOFF (2026-07-10 — One Brain intake foundation onto mainline)
+
+## 2026-07-10 | One Brain intake foundation transplanted to main history
+- Finding: main and prototype branch `feat/one-brain-reader-result` have NO common git ancestor
+  (PII-purge repo recreate). Merge impossible + would risk re-introducing purged PII. So the
+  foundation was COPIED (working-tree) onto fresh branch `feat/one-brain-intake-foundation` off main.
+- 27 files added (all previously absent on main); static-verified: 0 unresolved imports, all 8
+  seam symbols present, tests self-contained (no PII). Authoritative typecheck/build/test = PR CI.
+- Foundation-only: NOTHING calls it (zero prod risk). Translation shadow hook (default OFF) +
+  shadow-off proof = a deliberate SEPARATE next PR.
+- NEXT: (1) confirm PR CI green; (2) merge (owner clicks); (3) wire ONE_BRAIN_INTAKE_SHADOW=OFF
+  into Translation route + shadow-off proof PR; (4) Preview shadow window, N>=25/family before trust.
+
+<!-- prior handoff below -->
 # HANDOFF (2026-07-09 — CI guards green-up: controlled-skip for owner-PII secret)
 
 ## 2026-07-09 | Infra truth + PR #2 Content & Brand guard
