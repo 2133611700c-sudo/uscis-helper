@@ -51,9 +51,12 @@ describe('intake gate + status derivation (fail-closed)', () => {
   const ready = (): DocumentIntakeResult => {
     const d = emptyIntake()
     d.preflight = { ...d.preflight, status: 'measured', isDocument: true, quality: 'ok', mediaType: 'image' }
+    d.orientation = { ...d.orientation, status: 'measured', rotationAppliedCw: 0, telemetryStatus: 'fallback_measured' }
+    d.language = { ...d.language, status: 'measured', primary: 'uk', scripts: ['cyrillic'], languageMode: 'monolingual', printedTextPresent: true, handwritingPresent: false }
     d.docType = { ...d.docType, status: 'measured', docTypeId: 'passport', confidence: 0.95, trusted: true }
     d.country = { ...d.country, status: 'measured', country: 'UA' }
     d.family = { ...d.family, status: 'measured', family: 'identity_document' }
+    d.pageSide = { ...d.pageSide, status: 'measured', side: 'front', pageIndex: 0 }
     d.route = { ...d.route, reader: 'passport_reader' }
     const { status, review } = deriveIntakeStatus(d)
     return { ...d, status, review }
@@ -77,8 +80,9 @@ describe('intake gate + status derivation (fail-closed)', () => {
   it('handwriting present ⇒ needs_review (not ready), recognition still allowed but held', () => {
     const r = ready()
     r.language = { ...r.language, handwritingPresent: true }
-    const { status } = deriveIntakeStatus(r)
+    const { status, review } = deriveIntakeStatus(r)
     expect(status).toBe('needs_review')
+    expect(review.reasonCodes).toContain('handwriting_present')
   })
   it('user hint conflicting with measured type is a review reason, never overrides', () => {
     const r = ready()
@@ -92,6 +96,41 @@ describe('intake gate + status derivation (fail-closed)', () => {
   it('reader none ⇒ never ready for recognition', () => {
     const r = ready(); r.route = { ...r.route, reader: 'none' }
     expect(intakeReadyForRecognition(r)).toBe(false)
+  })
+  it('route.needsHumanReview=true always forces reviewRequired=true', () => {
+    const r = ready()
+    r.route = { ...r.route, needsHumanReview: true }
+    const { status, review } = deriveIntakeStatus(r)
+    expect(status).toBe('needs_review')
+    expect(review.reviewRequired).toBe(true)
+    expect(review.reasonCodes).toContain('route_requires_human_review')
+  })
+  it('handwritingPresent=null is unknown, not false', () => {
+    const r = ready()
+    r.language = { ...r.language, handwritingPresent: null }
+    const { status, review } = deriveIntakeStatus(r)
+    expect(status).toBe('needs_review')
+    expect(review.reviewRequired).toBe(true)
+    expect(review.reasonCodes).toContain('handwriting_unknown')
+    expect(review.reasonCodes).not.toContain('handwriting_present')
+  })
+  it('required attempted/unknown nodes block ready with exact reasons', () => {
+    const r = ready()
+    r.orientation = { ...r.orientation, status: 'attempted', rotationAppliedCw: null }
+    r.language = { ...r.language, status: 'attempted', primary: 'unknown', handwritingPresent: null, printedTextPresent: null, scripts: [] }
+    r.country = { ...r.country, status: 'attempted', country: 'UNKNOWN' }
+    r.pageSide = { ...r.pageSide, status: 'attempted', side: 'unknown', pageIndex: null }
+    const { status, review } = deriveIntakeStatus(r)
+    expect(status).toBe('needs_review')
+    expect(review.reviewRequired).toBe(true)
+    expect(review.reasonCodes).toContain('orientation_not_measured')
+    expect(review.reasonCodes).toContain('language_not_measured')
+    expect(review.reasonCodes).toContain('language_unknown')
+    expect(review.reasonCodes).toContain('handwriting_unknown')
+    expect(review.reasonCodes).toContain('country_not_measured')
+    expect(review.reasonCodes).toContain('country_unknown')
+    expect(review.reasonCodes).toContain('page_side_not_measured')
+    expect(review.reasonCodes).toContain('page_side_unknown')
   })
 })
 

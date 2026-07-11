@@ -33,11 +33,14 @@ export type DecisionStatus =
 
 export type IntakeReasonCode =
   | 'not_a_document' | 'low_image_quality' | 'duplicate_upload'
-  | 'orientation_not_measured' | 'language_unknown' | 'country_unknown'
+  | 'orientation_not_measured' | 'language_not_measured' | 'language_unknown'
+  | 'handwriting_unknown' | 'country_not_measured' | 'country_unknown'
+  | 'family_not_measured'
   | 'family_unknown' | 'doc_type_unknown' | 'doc_type_low_confidence'
   | 'handwriting_present' | 'single_provider_classification'
+  | 'page_side_not_measured' | 'page_side_unknown' | 'route_requires_human_review'
   | 'user_hint_conflicts_measured' | 'no_reader_route' | 'no_family_metrics_yet'
-  | 'provider_unavailable' | 'below_route_confidence'
+  | 'provider_unavailable' | 'below_route_confidence' | 'shadow_error'
 
 /** Every decision carries this — its provenance and its own honest certainty. Evidence is a
  *  PII-SAFE pointer/hash or a reason string, NEVER raw document text. */
@@ -210,30 +213,51 @@ export function deriveIntakeStatus(
 ): { status: IntakeStatus; review: ReviewDecision } {
   const min = opts.docTypeMinConfidence ?? 0.65
   const reasons: IntakeReasonCode[] = []
+  const pushUnique = (reason: IntakeReasonCode) => {
+    if (!reasons.includes(reason)) reasons.push(reason)
+  }
 
   if (d.preflight.status === 'measured' && d.preflight.isDocument === false) {
-    reasons.push('not_a_document')
+    pushUnique('not_a_document')
     return { status: 'rejected', review: { reviewRequired: true, policy: 'reject_or_retake', reasonCodes: reasons } }
   }
-  if (d.preflight.quality === 'low') reasons.push('low_image_quality')
-  if (d.preflight.isDuplicate === true) reasons.push('duplicate_upload')
+  if (d.preflight.quality === 'low') pushUnique('low_image_quality')
+  if (d.preflight.isDuplicate === true) pushUnique('duplicate_upload')
 
   const typeKnown = d.docType.status === 'measured' && d.docType.docTypeId !== 'unknown'
     && d.docType.docTypeId !== 'unsupported' && d.docType.docTypeId !== 'not_a_document'
   if (!typeKnown) {
-    if (!(d.country.status === 'measured') || d.country.country === 'UNKNOWN') reasons.push('country_unknown')
-    if (!(d.family.status === 'measured') || d.family.family === 'unknown') reasons.push('family_unknown')
-    reasons.push('doc_type_unknown')
+    if (d.country.status !== 'measured') pushUnique('country_not_measured')
+    if (d.country.country === 'UNKNOWN') pushUnique('country_unknown')
+    if (d.family.status !== 'measured') pushUnique('family_not_measured')
+    if (d.family.family === 'unknown') pushUnique('family_unknown')
+    pushUnique('doc_type_unknown')
     return { status: 'unknown', review: { reviewRequired: true, policy: 'manual_review_required', reasonCodes: reasons } }
   }
-  if ((d.docType.confidence ?? 0) < min) reasons.push('doc_type_low_confidence')
-  if (d.language.handwritingPresent === true) reasons.push('handwriting_present')
-  if (d.orientation.status === 'attempted') reasons.push('orientation_not_measured')
-  if (d.userHint && d.userHint.docTypeId !== d.docType.docTypeId) reasons.push('user_hint_conflicts_measured')
-  if (d.route.needsHTR) reasons.push('provider_unavailable')
+  if ((d.docType.confidence ?? 0) < min) pushUnique('doc_type_low_confidence')
+
+  if (d.orientation.status !== 'measured') pushUnique('orientation_not_measured')
+
+  if (d.language.status !== 'measured') pushUnique('language_not_measured')
+  if (d.language.primary === 'unknown') pushUnique('language_unknown')
+  if (d.language.handwritingPresent === true) pushUnique('handwriting_present')
+  if (d.language.handwritingPresent === null) pushUnique('handwriting_unknown')
+
+  if (d.country.status !== 'measured') pushUnique('country_not_measured')
+  if (d.country.country === 'UNKNOWN') pushUnique('country_unknown')
+
+  if (d.family.status !== 'measured') pushUnique('family_not_measured')
+  if (d.family.family === 'unknown') pushUnique('family_unknown')
+
+  if (d.pageSide.status !== 'measured') pushUnique('page_side_not_measured')
+  if (d.pageSide.side === 'unknown') pushUnique('page_side_unknown')
+
+  if (d.route.needsHumanReview) pushUnique('route_requires_human_review')
+  if (d.userHint && d.userHint.docTypeId !== d.docType.docTypeId) pushUnique('user_hint_conflicts_measured')
+  if (d.route.needsHTR) pushUnique('provider_unavailable')
 
   if (d.route.reader === 'none' || d.route.reader === 'unknown_reader') {
-    reasons.push('no_reader_route')
+    pushUnique('no_reader_route')
     return { status: 'unknown', review: { reviewRequired: true, policy: 'manual_review_required', reasonCodes: reasons } }
   }
   const status: IntakeStatus = reasons.length === 0 ? 'ready' : 'needs_review'
