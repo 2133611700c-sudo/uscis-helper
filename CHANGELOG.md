@@ -1,4 +1,5 @@
 # CHANGELOG
+<!-- 2026-07-11 ops: Staging Keep-Alive workflow fixed — pings uscis-helper-staging /auth/v1/health with publishable key every 3d (no DB password). Prevents Supabase free-tier idle-pause. Enabled, run green. -->
 <!-- 2026-07-11 recognition audit doc + honest Core-B2 model field (was gemini-2.5-flash, now primary). Recreated clean off main (old #17 CONFLICTING). Next: Vertical Slice 3-PR program (A normalization, B reader-control+detected-lang, C recognition→review→translation). -->
 <!-- 2026-07-11 Vertical Slice #1 steps 5/6 UX: wizard auto-detect option (NEXT_PUBLIC_ONE_BRAIN_AUTO_DETECT, default OFF => wizard unchanged, zero regression). When ON, screen-2 offers 'detect automatically': upload sent WITHOUT docTypeId => server intake selects reader; post-extract adopts server doc_type_id for review/success screens. Closes 'user uploads without choosing type' at the UI. -->
 <!-- 2026-07-11 Vertical Slice #1 E2E LIVE PROVEN: raw Soviet birth cert (no type) → auto-intake → auto-reader=ua_birth_certificate → 12 candidate fields, all force_review → translation rows. Preview only, N=1, docs/reports/VERTICAL_SLICE_1_E2E_LIVE_2026-07-11.md. -->
