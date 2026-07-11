@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 2026-07-10 | One Brain B->A decision-shadow bridge (Translation only, default OFF)
+### Added
+- `intake/readerBridge.ts` — SHARED, PII-free `decideReaderDocType(manual, obs)` + `isReaderControlEnabled()`
+  (flag `ONE_BRAIN_CONTROLS_READER`, default OFF). Pure function of the intake shadow observation:
+  records agreement / intakeReady / safeToBridge, but `effectiveDocTypeId` ALWAYS = manual in this
+  decision-shadow phase. Reusable by TPS/EAD/Re-Parole later.
+- Wired into Translation `vision-extract/route.ts`: the existing intake shadow now captures its
+  observation ONCE (no second analyzeIntake) and, when the flag is ON, logs the bridge decision
+  `[one_brain_reader_bridge]` PII-free. Reader still uses the MANUAL docTypeId — response byte-identical.
+- Tests: `intake/__tests__/readerBridge.test.ts` (7 decision cases: agreement/disagreement/not-ready/
+  unknown/not-run/null/PII-free) + `vision-extract/__tests__/readerBridgeWiring.test.ts` (flag-gated,
+  single runIntakeShadow, try/catch, reader keeps docTypeId).
+### Not done
+- No TPS/EAD/Re-Parole change. Flag not enabled anywhere. No paid calls. No type substitution (that is
+  the later controlled-bridge phase; this only RECORDS what a bridge would decide).
+
 ## 2026-07-10 | Release truth refresh — production provenance verified
 - Refreshed stale production-provenance docs to the current verified truth: production `/api/healthz` SHA matches current `origin/main` SHA `95b1065d1bb0598c9bb44d223ea1a22999a05724`.
 - Updated `RELEASE_STATE.yaml`, `STATUS.md`, `HANDOFF.md`, and the P8-A mainline verification report so they no longer leave the older `UNVERIFIED` / `3227dab` claim alongside the current verified state.
