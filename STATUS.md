@@ -1,3 +1,4 @@
+<!-- 2026-07-11 Vertical Slice #1 E2E LIVE PROVEN: raw Soviet birth cert (no type) → auto-intake → auto-reader=ua_birth_certificate → 12 candidate fields, all force_review → translation rows. Preview only, N=1, docs/reports/VERTICAL_SLICE_1_E2E_LIVE_2026-07-11.md. -->
 <!-- 2026-07-11 redeploy trigger: Preview picks up ONE_BRAIN_INTAKE_SHADOW+CONTROLS_READER+READER_FALLBACK for the vertical-slice E2E on the Soviet birth cert. -->
 <!-- 2026-07-11 test fix: readerBridgeWiring try/catch assertion robust (intent not char-count) after controlled block grew. -->
 <!-- 2026-07-11 Vertical Slice #1 PR-2b: CONTROLLED B->A bridge acts. Translation route computes effectiveReaderDocTypeId (=manual when ONE_BRAIN_CONTROLS_READER OFF => byte-identical; = bridged intake reader-type when safe+mapped) and threads it through quality-gate/read/knowledge/ensemble/response consistently. Fail-closed to manual on unmapped/not-ready. Never unknown/unsupported. -->
