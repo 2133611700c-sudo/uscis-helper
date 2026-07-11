@@ -1,3 +1,4 @@
+<!-- 2026-07-11 Vertical Slice #1 PR-2a: controlled-bridge CRUX — intakeToReaderDocType mapping (intake enum ⊃ reader enum; ua_birth_certificate_soviet→ua_birth_certificate; ambiguous→null fail-closed) + bridgedReaderDocTypeId on decideReaderDocType. Pure, tested, NO route change yet (route-act = PR-2b). -->
 <!-- 2026-07-11 test fix: reader-fallback source-guard counts call-site not module path (3 vs 2). -->
 <!-- 2026-07-11 test fix: openaiVisionProvider.test uses vi.stubGlobal for fetch (was `as never` → TS2339). -->
 <!-- 2026-07-11 Vertical Slice #1 PR-1: reader OpenAI fallback (ONE_BRAIN_READER_FALLBACK default OFF) on retriable Gemini failure; non-primary=force-review. Branch feat/reader-openai-fallback. Next: controlled B->A bridge, review UI wiring, E2E. -->

@@ -30,9 +30,34 @@ export interface ReaderBridgeDecision {
   intakeStatus: string | null
   /** would a controlled bridge use the intake type? (ready AND usable type). */
   safeToBridge: boolean
+  /**
+   * The READER-registry docType a controlled bridge should read with, or null to keep manual.
+   * Non-null ONLY when safeToBridge AND the intake type maps cleanly to a reader-registry type
+   * (intake enum ⊃ reader enum — e.g. ua_birth_certificate_soviet → ua_birth_certificate). Ambiguous
+   * or unmapped intake types (passport, i94, …) stay null ⇒ fail-closed to the manual type.
+   */
+  bridgedReaderDocTypeId: string | null
   /** what the reader ACTUALLY uses in this phase: ALWAYS the manual type (decision-shadow). */
   effectiveDocTypeId: string
   reasonCodes: string[]
+}
+
+/**
+ * Map an INTAKE canonicalRegistry docType to a READER documentRegistry docType. Only clean, safe
+ * collapses are listed; everything else returns null ⇒ the controlled bridge keeps the manual type.
+ */
+export function intakeToReaderDocType(intakeDocTypeId: string | null): string | null {
+  switch (intakeDocTypeId) {
+    case 'ua_birth_certificate_soviet':
+    case 'ua_birth_certificate_modern':
+      return 'ua_birth_certificate'
+    case 'ua_marriage_certificate':
+      return 'ua_marriage_certificate'
+    // passport (internal vs international is ambiguous), i94, ead_card, us_* → no safe 1:1 reader
+    // mapping for the Translation reader ⇒ null ⇒ fail-closed to manual.
+    default:
+      return null
+  }
 }
 
 /**
@@ -53,6 +78,8 @@ export function decideReaderDocType(manualDocTypeId: string, obs: ShadowObservat
   if (ran && agreement === false) reasonCodes.push('type_disagreement')
 
   const safeToBridge = ran && intakeReady && typeUsable
+  const bridgedReaderDocTypeId = safeToBridge ? intakeToReaderDocType(intakeDocTypeId) : null
+  if (safeToBridge && bridgedReaderDocTypeId === null) reasonCodes.push('no_reader_mapping')
 
   return {
     service: obs?.service ?? 'translation',
@@ -62,8 +89,9 @@ export function decideReaderDocType(manualDocTypeId: string, obs: ShadowObservat
     intakeReady,
     intakeStatus: obs?.intakeStatus ?? null,
     safeToBridge,
-    // DECISION-SHADOW: the reader ALWAYS keeps the manual type in this phase. The substitution
-    // (safeToBridge ? intakeDocTypeId : manual) is deferred to the owner-gated controlled phase.
+    bridgedReaderDocTypeId,
+    // effectiveDocTypeId stays the MANUAL type: this pure function does not act. A controlled caller
+    // reads `bridgedReaderDocTypeId ?? manualDocTypeId` itself (decision-shadow only logs).
     effectiveDocTypeId: manualDocTypeId,
     reasonCodes,
   }
