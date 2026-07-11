@@ -76,6 +76,11 @@ describe('documentFieldReader — fallback wiring is safe (source-guard)', () =>
     expect(SRC).toMatch(/const retriable =/)
   })
   it('exactly one OpenAI fallback read, in a try/catch (never crashes the primary path)', () => {
-    expect((SRC.match(/openaiVisionProvider/g) ?? []).length).toBe(2) // import + one use
+    // the fallback passes openaiVisionProvider to coordinatedDocumentRead exactly once (call-site,
+    // not counting the named import / module path)
+    expect((SRC.match(/docTypeId, openaiVisionProvider/g) ?? []).length).toBe(1)
+    const block = SRC.slice(SRC.indexOf('READER RESILIENCE'))
+    expect(block).toMatch(/try \{/)
+    expect(block).toMatch(/\} catch/)
   })
 })

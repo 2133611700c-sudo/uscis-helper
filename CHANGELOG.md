@@ -1,4 +1,5 @@
 # CHANGELOG
+<!-- 2026-07-11 test fix: reader-fallback source-guard counts call-site not module path (3 vs 2). -->
 <!-- 2026-07-11 test fix: openaiVisionProvider.test uses vi.stubGlobal for fetch (was `as never` → TS2339). -->
 
 ## 2026-07-11 | Vertical Slice #1 PR-1: reader OpenAI fallback (resilience, default OFF)
