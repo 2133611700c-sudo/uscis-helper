@@ -1,4 +1,5 @@
 # CHANGELOG
+<!-- 2026-07-11 Recognition pipeline audit (4 agents) + fix: Core-B2 response reported model gemini-2.5-flash though it reads with the primary — now honest. Audit: docs/audit/RECOGNITION_PIPELINE_AUDIT_2026-07-11.md. Findings: preview+flash models (policy FAIL), PDF not converted, orientation/language shadow-only, deskew absent; birth-cert anti-fabrication STRONG. -->
 <!-- 2026-07-11 Vertical Slice #1 E2E LIVE PROVEN: raw Soviet birth cert (no type) → auto-intake → auto-reader=ua_birth_certificate → 12 candidate fields, all force_review → translation rows. Preview only, N=1, docs/reports/VERTICAL_SLICE_1_E2E_LIVE_2026-07-11.md. -->
 <!-- 2026-07-11 redeploy trigger: Preview picks up ONE_BRAIN_INTAKE_SHADOW+CONTROLS_READER+READER_FALLBACK for the vertical-slice E2E on the Soviet birth cert. -->
 <!-- 2026-07-11 test fix: readerBridgeWiring try/catch assertion robust (intent not char-count) after controlled block grew. -->
