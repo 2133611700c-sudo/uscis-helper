@@ -1439,7 +1439,11 @@ export function TranslateWizard() {
   const currentDocMeta = DOC_TYPES.find((d) => d.id === selectedDocType) ?? null
   // Phase 2.1a: review gate is enforced for auto docs (passport/id) AND for hard-case
   // docs when autoread returned >0 fields. Pure manual path (flag OFF or 0 fields) → no gate.
-  const needsReviewGate = currentDocMeta?.auto || hardCaseHasFields
+  // ALSO enforce it on the auto-detect path: when the user did NOT pick a document type and
+  // the system read fields itself, those candidates MUST be confirmed before finalization —
+  // otherwise a user could pay/finalize with unconfirmed (possibly hallucinated) fields.
+  // This only STRENGTHENS the gate; it never unlocks anything and clears once confirmed.
+  const needsReviewGate = currentDocMeta?.auto || hardCaseHasFields || (autoDetect && extractedFields.length > 0)
   // A field flagged ONLY because the document has no MRZ math-anchor
   // (every internal passport booklet; any passport with the MRZ strip out of
   // frame) becomes a one-click SOFT confirm, not a hard block on payment.
