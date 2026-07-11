@@ -25,7 +25,7 @@ Result: `DEGRADED`.
 - Preview deployment: `https://uscis-helper-cotbsu32q-sergiis-projects-8a97ee0f.vercel.app`
 - Preview deployment id: `dpl_Aiv1cTWuenyXKsAY6FnQn7rjn3oj`
 - Preview target: `preview`
-- Production baseline healthz: `sha=9688b5a`, which matches `origin/main` at `#8`
+- Production baseline healthz: `sha=95b1065`, which matches current `origin/main` (`#9`, docs-only on top of `#8`)
 
 Previously verified via Vercel env pull:
 

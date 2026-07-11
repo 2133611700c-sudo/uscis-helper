@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-07-10 | Release truth refresh — production provenance verified
+- Refreshed stale production-provenance docs to the current verified truth: production `/api/healthz` SHA matches current `origin/main` SHA `95b1065d1bb0598c9bb44d223ea1a22999a05724`.
+- Updated `RELEASE_STATE.yaml`, `STATUS.md`, `HANDOFF.md`, and the P8-A mainline verification report so they no longer leave the older `UNVERIFIED` / `3227dab` claim alongside the current verified state.
+
 ## 2026-07-10 | P8-A live Preview smoke + clean One Brain source-of-truth bundle
 - Added `docs/reports/P8A_MAINLINE_ZERO_COST_VERIFY_2026-07-10.md` — evidence-only verification that `#4`, `#6`, and `#8` are merged on `origin/main`; Translation shadow hook exists on main and is default-OFF by code; `ua_birth_certificate_soviet` is present in the live catalog/rules; Preview has `ONE_BRAIN_INTAKE_SHADOW=1` and `DIAG_ORIENT_ENABLED=1`, Production does not.
 - Added `docs/reports/ONE_BRAIN_RECOGNITION_REALITY_2026-07-10.md` — the clean docs-only truth: intake detection != field recognition; handwriting remains review-only; green CI/mainline presence do not prove live accuracy.
@@ -81,7 +85,7 @@
 ## 2026-06-21 | RELEASE_STATE.yaml refresh — unblock Release State Guard (basis was fabrication)
 - Release State Guard hard-failed: `state_basis_main_sha: 62c897a54daf3cf503a3b8831c8dcb2d0ce32f3c` was not a real commit object in this repo (per scripts/verify-release-state.mjs rule 4 — likely lost in an earlier history rewrite).
 - Set `state_basis_main_sha` to `505153713b7023f80349c2652dd3218694d28449` (real, current main HEAD before the CI-hardening batch — last known good base).
-- Set `verified_production_sha: UNVERIFIED` per schema discipline: prod `/api/healthz` returned short SHA `3227dab` which is not resolvable from this clone, so the value cannot be honestly claimed. UNVERIFIED is the schema-sanctioned placeholder; owner refreshes against the next real verified prod deploy.
+- Set `verified_production_sha: UNVERIFIED` per schema discipline at that time: prod `/api/healthz` returned short SHA `3227dab` which was not resolvable from that clone. SUPERSEDED 2026-07-10: production provenance is now verified at `95b1065d1bb0598c9bb44d223ea1a22999a05724`.
 - `verified_at: 2026-06-21T02:17:00Z`. Snapshot is intentionally STALE (basis != main tip) — guard reports as WARN, which is the documented expected behavior.
 
 

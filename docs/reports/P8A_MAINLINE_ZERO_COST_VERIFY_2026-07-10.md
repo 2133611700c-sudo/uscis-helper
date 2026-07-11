@@ -30,6 +30,7 @@ This report verifies, without any paid provider calls:
 `origin/main` commit tip confirms the landing order:
 
 ```text
+95b1065d docs: lock current One Brain source of truth with live preview proof (#9)
 9688b5a6 fix(intake): docType catalog from signatures (#8)
 4809fbb5 one-brain: wire ONE_BRAIN_INTAKE_SHADOW into Translation route, default OFF (#6)
 a33f465b one-brain: land intake foundation on mainline (#4)
