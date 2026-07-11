@@ -14,6 +14,7 @@
 
 import { getDocTypeSpec } from './documentRegistry'
 import { defaultVisionProvider, primaryGeminiModel } from './providers/geminiVisionProvider'
+import { openaiVisionProvider, isReaderFallbackEnabled, READER_FALLBACK_TIMEOUT_MS } from './providers/openaiVisionProvider'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { autoOrient } from './orientation/autoOrient'
 import { applyDateRoleGuard } from './dates/dateRoleGuard'
@@ -97,6 +98,29 @@ export async function readDocument(
       }
     }
     throw err
+  }
+
+  // ── READER RESILIENCE (ONE_BRAIN_READER_FALLBACK, default OFF) ──────────────
+  // On a RETRIABLE primary failure (rate-limit 429 / 5xx / timeout/deadline), try ONE OpenAI
+  // fallback read. A fallback read is non-primary ⇒ force-reviewed downstream (fallback_model_used);
+  // its fields are candidate-only, never auto-final. Only when no provider was explicitly injected.
+  if (!read.ok && !opts.provider && isReaderFallbackEnabled()) {
+    const retriable =
+      read.errorStatus === 429 || read.errorStatus === 503 || read.errorStatus === 502 ||
+      read.errorStatus === 408 || read.errorTimeout === true
+    if (retriable) {
+      try {
+        const fb = await coordinatedDocumentRead(imageBuffer, mimeType, spec, docTypeId, openaiVisionProvider, {
+          timeoutMs: Math.min(opts.timeoutMs ?? READER_FALLBACK_TIMEOUT_MS, READER_FALLBACK_TIMEOUT_MS),
+          attemptsPerModel: 1,
+          tenantScope: opts.cacheScope,
+          product: opts.product,
+        })
+        if (fb.ok) read = fb // use the fallback read; non-primary model ⇒ force-reviewed
+      } catch {
+        // the fallback must NEVER crash the primary read path
+      }
+    }
   }
 
   if (!read.ok) {

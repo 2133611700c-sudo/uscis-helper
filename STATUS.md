@@ -1,3 +1,6 @@
+<!-- 2026-07-11 test fix: reader-fallback source-guard counts call-site not module path (3 vs 2). -->
+<!-- 2026-07-11 test fix: openaiVisionProvider.test uses vi.stubGlobal for fetch (was `as never` → TS2339). -->
+<!-- 2026-07-11 Vertical Slice #1 PR-1: reader OpenAI fallback (ONE_BRAIN_READER_FALLBACK default OFF) on retriable Gemini failure; non-primary=force-review. Branch feat/reader-openai-fallback. Next: controlled B->A bridge, review UI wiring, E2E. -->
 <!-- 2026-07-10 test: make intakeShadowWiring try/catch assertion robust (intent, not char-count) after decision-shadow enlarged the block. -->
 <!-- 2026-07-10 fix: update intakeShadowWiring.test regex for the new `||isReaderControlEnabled()` guard (decision-shadow). -->
 # STATUS (2026-06-15 — MODEL MATRIX enforced in code (ADR-018): acceptance can NEVER score a fallback model; primary=gemini-3.1-pro-preview)
