@@ -34,7 +34,13 @@ export async function detectOrientationOsd(
     // OSD needs the osd traineddata. detectOrientation returns the angle the
     // image is rotated BY; the corrective rotation is the same magnitude applied
     // to bring it upright (tesseract already reports the deg to rotate to correct).
-    const worker = await tesseract.createWorker('osd', tesseract.OEM?.TESSERACT_ONLY ?? undefined, {
+    // FORCE the legacy OSD engine (OEM 0 = TESSERACT_ONLY). OSD orientation lives ONLY
+    // in the legacy engine; the default LSTM engine has no OSD and `detect()` returns
+    // no orientation data ("LSTM requested, but not present"). Hardcode 0 so a missing
+    // `tesseract.OEM` enum (bundler/serverless namespace shape) can't silently fall back
+    // to LSTM and disable orientation. Verified: with OEM 0, detect() returns
+    // orientation_degrees + orientation_confidence.
+    const worker = await tesseract.createWorker('osd', tesseract.OEM?.TESSERACT_ONLY ?? 0, {
       // no logger — keep CI/logs quiet
     })
     try {
@@ -47,11 +53,13 @@ export async function detectOrientationOsd(
           : typeof data?.ocr_confidence === 'number'
             ? data.ocr_confidence
             : 0
-      // tesseract reports orientation_degrees = the clockwise rotation applied to
-      // the page; to correct we rotate by (360 - deg). Guard both conventions by
-      // normalizing to the nearest 90.
+      // tesseract's `orientation_degrees` IS the clockwise rotation to APPLY to bring
+      // the page upright — feed it DIRECTLY to sharp.rotate (which rotates clockwise).
+      // (The old `360 - deg` inverted 90↔270 and left those upside-down.) Verified on
+      // real 0/90/180/270 fixtures: applying `orientation_degrees` yields upright bytes
+      // (re-run OSD on the result reports 0°).
       const deg: number = typeof data?.orientation_degrees === 'number' ? data.orientation_degrees : 0
-      const corrective = toOrientation((360 - deg) % 360)
+      const corrective = toOrientation(deg)
       const confident = confidence >= MIN_OSD_CONFIDENCE && corrective !== 0
       return { rotation: confident ? corrective : 0, confident }
     } finally {
