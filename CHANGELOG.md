@@ -1,4 +1,5 @@
 # CHANGELOG
+<!-- 2026-07-11 redeploy trigger: Preview picks up ONE_BRAIN_INTAKE_SHADOW+CONTROLS_READER+READER_FALLBACK for the vertical-slice E2E on the Soviet birth cert. -->
 <!-- 2026-07-11 test fix: readerBridgeWiring try/catch assertion robust (intent not char-count) after controlled block grew. -->
 <!-- 2026-07-11 Vertical Slice #1 PR-2b: CONTROLLED B->A bridge acts. Translation route computes effectiveReaderDocTypeId (=manual when ONE_BRAIN_CONTROLS_READER OFF => byte-identical; = bridged intake reader-type when safe+mapped) and threads it through quality-gate/read/knowledge/ensemble/response consistently. Fail-closed to manual on unmapped/not-ready. Never unknown/unsupported. -->
 <!-- 2026-07-11 Vertical Slice #1 PR-2a: controlled-bridge CRUX — intakeToReaderDocType mapping (intake enum ⊃ reader enum; ua_birth_certificate_soviet→ua_birth_certificate; ambiguous→null fail-closed) + bridgedReaderDocTypeId on decideReaderDocType. Pure, tested, NO route change yet (route-act = PR-2b). -->
