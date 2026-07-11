@@ -19,7 +19,7 @@ const SPEC = {
 
 const img = Buffer.from('fake-image-bytes')
 
-afterEach(() => { vi.restoreAllMocks(); delete process.env.OPENAI_API_KEY })
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); delete process.env.OPENAI_API_KEY })
 
 describe('reader fallback flag', () => {
   it('ONE_BRAIN_READER_FALLBACK default OFF', () => {
@@ -37,14 +37,14 @@ describe('openaiVisionProvider.readFields', () => {
 
   it('parses the model JSON into VisionFieldRead[] (only allowed keys)', async () => {
     process.env.OPENAI_API_KEY = 'sk-test'
-    vi.spyOn(global, 'fetch' as never).mockResolvedValue({
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true, status: 200,
       json: async () => ({ choices: [{ message: { content: JSON.stringify({
         child_name: { cyrillic: 'Тарас', can_read: true, confidence: 0.6, reason: 'hand' },
         birth_date: { cyrillic: '', iso_date: '1970-01-02', can_read: true, confidence: 0.5, reason: 'ok' },
         NOT_IN_SPEC: { cyrillic: 'x', can_read: true, confidence: 1, reason: '' },
       }) } }] }),
-    } as never)
+    } as unknown as Response))
     const r = await openaiVisionProvider.readFields(img, 'image/jpeg', SPEC)
     expect(r.ok).toBe(true)
     expect(r.model).toBeTruthy()
@@ -54,7 +54,7 @@ describe('openaiVisionProvider.readFields', () => {
 
   it('HTTP error → ok:false + errorStatus (so the reader can classify it)', async () => {
     process.env.OPENAI_API_KEY = 'sk-test'
-    vi.spyOn(global, 'fetch' as never).mockResolvedValue({ ok: false, status: 429, json: async () => ({}) } as never)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, json: async () => ({}) } as unknown as Response))
     const r = await openaiVisionProvider.readFields(img, 'image/jpeg', SPEC)
     expect(r.ok).toBe(false)
     expect(r.errorStatus).toBe(429)
@@ -62,7 +62,7 @@ describe('openaiVisionProvider.readFields', () => {
 
   it('abort/timeout → ok:false + errorTimeout, never throws', async () => {
     process.env.OPENAI_API_KEY = 'sk-test'
-    vi.spyOn(global, 'fetch' as never).mockRejectedValue(Object.assign(new Error('aborted'), { name: 'AbortError' }) as never)
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(Object.assign(new Error('aborted'), { name: 'AbortError' })))
     const r = await openaiVisionProvider.readFields(img, 'image/jpeg', SPEC)
     expect(r.ok).toBe(false)
     expect(r.errorTimeout).toBe(true)
