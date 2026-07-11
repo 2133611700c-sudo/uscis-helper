@@ -52,7 +52,44 @@ function modelFallback(): string[] {
   return [...new Set([primary, 'gemini-3.5-flash', 'gemini-2.5-flash'])]
 }
 
-export function buildPrompt(spec: DocTypeSpec): string {
+/** Optional detected context (from intake language/script detection). When
+ *  provided it drives the LANGUAGE rule instead of a hardcoded nationality;
+ *  backward compatible — existing callers pass nothing. */
+export interface BuildPromptContext {
+  language?: string
+  script?: string
+  country?: string
+}
+
+/**
+ * Build the LANGUAGE rule. Parameterized from ctx when available, else derived
+ * from the spec's own script. NEVER asserts a specific nationality unless the
+ * ctx/spec implies it. The concrete Cyrillic-vs-Russian anti-error guidance is
+ * kept ONLY when the script is cyrillic or mixed.
+ */
+function buildLanguageRule(spec: DocTypeSpec, ctx?: BuildPromptContext): string {
+  const script = (ctx?.script ?? spec.script ?? '').toLowerCase()
+  const isCyrillic = script === 'cyrillic' || script === 'mixed'
+
+  // Describe the expected language from ctx when present (no hardcoded nationality).
+  const langLabel = ctx?.language?.trim()
+  const countryLabel = ctx?.country?.trim()
+
+  const cyrillicGuidance =
+    ' Do NOT Russify a Ukrainian name or place — keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms where the document uses them. Errors to AVOID: Тарас→(wrong)Сергей, Тарасович→(wrong)Сергеевич, Степанівна→(wrong)Степановна, Наталія→(wrong)Наталья, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой, ЗАГС/РАЦС forms must stay as written. Equally, do NOT Ukrainianize a genuinely Russian-language document. Transcribe the script that is actually printed.'
+
+  if (langLabel || countryLabel) {
+    const origin = [langLabel && `${langLabel}-language`, countryLabel && `${countryLabel}-issued`]
+      .filter(Boolean)
+      .join(', ')
+    return `- LANGUAGE — transcribe the text EXACTLY as written. This appears to be a ${origin} document — read it in its own language and do NOT translate or convert it to another language while transcribing.${isCyrillic ? cyrillicGuidance : ''}`
+  }
+
+  // No ctx: neutral default. Do not assert a nationality; just transcribe as written.
+  return `- LANGUAGE — transcribe the text EXACTLY as written, in the document's own language and script. Do NOT translate or convert it to another language while transcribing.${isCyrillic ? cyrillicGuidance : ''}`
+}
+
+export function buildPrompt(spec: DocTypeSpec, ctx?: BuildPromptContext): string {
   const lines = spec.fields.map((f) => {
     const dateHint = f.kind === 'date' ? ' (also return iso_date YYYY-MM-DD)' : ''
     const nameHint = f.kind === 'name' && spec.script === 'mixed'
@@ -73,7 +110,7 @@ For each key return an object:
   "reason": "<short>" }
 
 Rules:
-- LANGUAGE — transcribe the Cyrillic EXACTLY as written. These are UKRAINIAN-issued documents: keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms — do NOT convert them to Russian. Errors to AVOID: Тарас→(wrong)Сергей, Тарасович→(wrong)Сергеевич, Степанівна→(wrong)Степановна, Наталія→(wrong)Наталья, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой, ЗАГС/РАЦС forms must stay as written. Russifying a Ukrainian name or place is a transcription mistake.
+${buildLanguageRule(spec, ctx)}
 - ORIENTATION — the photo is very often ROTATED (90° sideways, 180° upside-down, or 270°), e.g. a passport page shot in portrait. You MUST mentally rotate the page until the text is upright, then read every field. NEVER return can_read=false just because the text is sideways or upside-down — rotation is normal and you are expected to handle it. Reading rotated text is required; orientation must not change what you read.
 - Read the FULL word, every letter. Never return only a suffix (never "ович" alone).
 - Handwritten Ukrainian "Т" and "П" look similar; pick the letter that forms a REAL Ukrainian name/place.
