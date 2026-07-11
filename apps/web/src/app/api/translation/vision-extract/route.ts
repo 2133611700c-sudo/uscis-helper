@@ -37,6 +37,7 @@ import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from 
 import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { runIntakeShadow, isIntakeShadowEnabled } from '@/lib/docintel/intake/shadowRunner'
+import { isReaderControlEnabled, decideReaderDocType } from '@/lib/docintel/intake/readerBridge'
 import { buildRealIntakeProviders, declaredToCanonical } from '@/lib/docintel/intake/realProviders'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked, isProviderError } from '@/lib/ocr/types'
@@ -264,17 +265,23 @@ async function POST_impl(req: NextRequest) {
   // hint, ALONGSIDE the current path. Never changes the response; fail-open; PII-free log only.
   // The flag is checked FIRST so OFF costs nothing (no buffer read, no provider build, no
   // latency ⇒ no 504 risk). Enable only on Preview via ONE_BRAIN_INTAKE_SHADOW=1.
-  if (isIntakeShadowEnabled()) {
+  if (isIntakeShadowEnabled() || isReaderControlEnabled()) {
     try {
       const shadowProviders = buildRealIntakeProviders()
       if (shadowProviders) {
         const firstBuf = Buffer.from(new Uint8Array(await rawFiles[0].arrayBuffer()))
-        await runIntakeShadow(
+        // ONE intake run, reused by both the observe-shadow and the B→A decision-shadow below.
+        const obs = await runIntakeShadow(
           firstBuf,
           shadowProviders,
           { service: 'translation', declaredDocTypeId: declaredToCanonical(docTypeId) },
           { traceId: 'translation-shadow', log: (m, p) => console.info(m, JSON.stringify(p)) },
         )
+        if (isReaderControlEnabled()) {
+          // B→A DECISION-SHADOW (ONE_BRAIN_CONTROLS_READER, default OFF): record — PII-free — what a
+          // bridge WOULD decide. The reader still uses the MANUAL docTypeId; nothing here is acted on.
+          console.info('[one_brain_reader_bridge]', JSON.stringify(decideReaderDocType(docTypeId, obs)))
+        }
       }
     } catch {
       // shadow must NEVER affect the live translation response

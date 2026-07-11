@@ -15,13 +15,21 @@ import path from 'node:path'
 const SRC = fs.readFileSync(path.resolve(__dirname, '..', 'route.ts'), 'utf-8')
 
 describe('Translation route — ONE_BRAIN_INTAKE_SHADOW wiring is safe + zero-cost when OFF', () => {
-  it('the shadow block is gated behind isIntakeShadowEnabled()', () => {
-    expect(SRC).toMatch(/if \(isIntakeShadowEnabled\(\)\)/)
+  it('the shadow block is gated behind isIntakeShadowEnabled() (now also triggers on the reader-control flag)', () => {
+    // The block runs when EITHER the observe-shadow flag OR the B→A decision-shadow flag is on;
+    // when both are OFF it is skipped entirely (zero cost). Still gated, never unconditional.
+    expect(SRC).toMatch(/if \(isIntakeShadowEnabled\(\) \|\| isReaderControlEnabled\(\)\)/)
   })
 
   it('the shadow block is wrapped in try/catch (never affects the response)', () => {
     const block = SRC.slice(SRC.indexOf('isIntakeShadowEnabled()'))
-    expect(block).toMatch(/try \{[\s\S]{0,600}runIntakeShadow[\s\S]{0,600}\} catch/)
+    // intent, not brittle char-counts: the guarded block opens a try, calls runIntakeShadow, and
+    // is closed by a catch — so nothing inside can throw into the live response.
+    expect(block).toMatch(/try \{/)
+    expect(block).toContain('runIntakeShadow')
+    expect(block).toMatch(/\} catch/)
+    expect(block.indexOf('runIntakeShadow')).toBeGreaterThan(block.indexOf('try {'))
+    expect(block.indexOf('} catch')).toBeGreaterThan(block.indexOf('runIntakeShadow'))
   })
 
   it('the flag is checked BEFORE the shadow buffer is read (OFF ⇒ no arrayBuffer, no cost)', () => {
