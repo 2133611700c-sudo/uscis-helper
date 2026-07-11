@@ -458,7 +458,9 @@ async function POST_impl(req: NextRequest) {
         date_ensemble: ens.diag,
         pages: corePageResults, page_count: rawFiles.length,
         provider: 'one-brain-core:translation-b2',
-        model: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-flash'),
+        // Core B2 reads with the PRIMARY model; report it honestly (was mislabelled
+        // 'gemini-2.5-flash' — a flash model the Core path never uses as primary).
+        model: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview'),
         status: 'ok:core-b2',
         core_version: 'b2',
         // CUTOVER: the Core path is the canonical arbitration path. Marked honestly
