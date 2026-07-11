@@ -46,14 +46,19 @@ describe('A) control flow — legacy fallback is now the canonical pipeline + ma
     expect(legacyRows).toBeGreaterThan(legacyBuild)
   })
 
-  it('Core success is marked canonical / fallback_used:false', () => {
+  it('Core success is marked canonical; fallback_used derives from the reader trace (no hardcoded false)', () => {
+    // core_path is the arbitration-path indicator; fallback_used now means "the #13
+    // OpenAI reader fallback actually served", derived from the ReaderExecutionTrace —
+    // never the old hardcoded literal.
     expect(SRC).toMatch(/core_path:\s*'canonical'/)
-    expect(SRC).toMatch(/fallback_used:\s*false/)
+    expect(SRC).toMatch(/fallback_used:\s*coreReader\.fallback_used/)
+    expect(SRC).not.toMatch(/fallback_used:\s*false/)
   })
 
-  it('the legacy response is marked legacy_fallback / fallback_used:true', () => {
+  it('the legacy response is marked legacy_fallback; fallback_used derives from the reader trace', () => {
     expect(SRC).toMatch(/core_path:\s*'legacy_fallback'/)
-    expect(SRC).toMatch(/fallback_used:\s*true/)
+    expect(SRC).toMatch(/fallback_used:\s*legacyReader\.fallback_used/)
+    expect(SRC).not.toMatch(/fallback_used:\s*true/)
   })
 
   it('the legacy canonical pipeline sits strictly AFTER the Core success return', () => {
@@ -68,7 +73,9 @@ describe('A) control flow — legacy fallback is now the canonical pipeline + ma
     // not the one-brain-core provider string the Core return uses.
     const tail = SRC.slice(SRC.indexOf('core_path: \'legacy_fallback\''))
     expect(tail).toMatch(/provider:\s*lastResult\?\.provider\s*\?\?\s*null/)
-    expect(tail).toMatch(/model:\s*lastResult\?\.model\s*\?\?\s*null/)
+    // model is the ACTUAL reader model from the trace (finalModel), falling back to the
+    // real last-result model — never a canonical relabel, never a constant.
+    expect(tail).toMatch(/model:\s*legacyReader\.model\s*\?\?\s*lastResult\?\.model\s*\?\?\s*null/)
   })
 })
 

@@ -224,6 +224,9 @@ describe('Core-B2 route — source guard: telemetry derives from the trace, not 
 describe('READER_PROVIDER is dead — not referenced by the reader', () => {
   it('documentFieldReader does not read READER_PROVIDER (gpt-4.1 comes ONLY from the #13 fallback)', () => {
     const readerSrc = readFileSync(join(__dirname, '../documentFieldReader.ts'), 'utf8')
-    expect(readerSrc).not.toContain('READER_PROVIDER')
+    // The reader must never READ a READER_PROVIDER env var (it is dead). Comments may
+    // name it to explain WHY gpt-4.1 can only come from the #13 fallback, so we assert
+    // the absence of the actual env access, not the mere mention of the identifier.
+    expect(readerSrc).not.toMatch(/env\.READER_PROVIDER/)
   })
 })
