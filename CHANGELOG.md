@@ -1,4 +1,5 @@
 # CHANGELOG
+<!-- 2026-07-10 test: make intakeShadowWiring try/catch assertion robust (intent, not char-count) after decision-shadow enlarged the block. -->
 <!-- 2026-07-10 fix: update intakeShadowWiring.test regex for the new `||isReaderControlEnabled()` guard (decision-shadow). -->
 
 ## 2026-07-10 | One Brain B->A decision-shadow bridge (Translation only, default OFF)

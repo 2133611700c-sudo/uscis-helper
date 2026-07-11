@@ -1,3 +1,4 @@
+<!-- 2026-07-10 test: make intakeShadowWiring try/catch assertion robust (intent, not char-count) after decision-shadow enlarged the block. -->
 <!-- 2026-07-10 fix: update intakeShadowWiring.test regex for the new `||isReaderControlEnabled()` guard (decision-shadow). -->
 # STATUS (2026-06-15 — MODEL MATRIX enforced in code (ADR-018): acceptance can NEVER score a fallback model; primary=gemini-3.1-pro-preview)
 <!-- 2026-07-10 B->A decision-shadow bridge live on Translation, ONE_BRAIN_CONTROLS_READER default OFF, reader still uses manual docTypeId (byte-identical). Shared readerBridge for TPS/EAD/ReParole reuse. NOT a flip. -->
