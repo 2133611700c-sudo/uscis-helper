@@ -36,6 +36,7 @@ import { heicToJpeg } from '@/lib/ocr/heicToJpeg'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
 import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
+import type { ReaderExecutionTrace } from '@/lib/docintel/types'
 import { runIntakeShadow, isIntakeShadowEnabled } from '@/lib/docintel/intake/shadowRunner'
 import { isDocNormalizeEnabled } from '@/lib/docintel/normalize/flags'
 import { normalizeDocument } from '@/lib/docintel/normalize/normalizeDocument'
@@ -140,6 +141,32 @@ function ocrUnavailableResponse(err: OcrProviderError): NextResponse {
 // FieldOut shape is now owned by the canonical translationAdapter (toTranslationRows
 // returns it for BOTH the Core path and — post-cutover — the legacy fallback). The
 // route no longer builds rows by hand, so the local duplicate type was removed.
+
+/**
+ * TRUTHFUL READER TELEMETRY: derive the response reader-identity fields from the
+ * per-page ReaderExecutionTrace built at the real provider-call site. NEVER from a
+ * constant. Multi-page: distinct finalModel/finalProvider values are joined with '+'.
+ * fallback_used is true iff SOME page's fallback actually SERVED the read.
+ * provider_call_count is the real total of HTTP attempts across all pages.
+ */
+function deriveReaderTelemetry(traces: ReaderExecutionTrace[]): {
+  model: string | null
+  reader_provider: string | null
+  fallback_used: boolean
+  provider_call_count: number
+} {
+  const distinct = (vals: Array<string | null>): string | null => {
+    const uniq = [...new Set(vals.filter((v): v is string => !!v))]
+    if (uniq.length === 0) return null
+    return uniq.length === 1 ? uniq[0] : uniq.join('+')
+  }
+  return {
+    model: distinct(traces.map((t) => t.finalModel)),
+    reader_provider: distinct(traces.map((t) => t.finalProvider)),
+    fallback_used: traces.some((t) => t.fallbackAttempted && t.fallbackOutcome === 'success'),
+    provider_call_count: traces.reduce((s, t) => s + t.providerCallCount, 0),
+  }
+}
 
 /**
  * ENSEMBLE_DATE_ENABLED (default OFF): cross-engine date check shared by BOTH the
@@ -412,6 +439,11 @@ async function POST_impl(req: NextRequest) {
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
     // HONEST DEGRADATION (P1): collect any typed provider error a page surfaced.
     const coreProviderErrors: OcrProviderError[] = []
+    // TRUTHFUL READER TELEMETRY: collect the per-page ReaderExecutionTrace built at
+    // the real provider-call site. Every reader telemetry field in the response
+    // derives from these traces — never from a constant. PII-free (provider/model/
+    // latency/counts only).
+    const coreTraces = corePages.map(({ r }) => r.reader_trace).filter((t): t is NonNullable<typeof t> => !!t)
     for (const { i, r } of corePages) {
       corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
       if (r.ok && Array.isArray(r.fields)) {
@@ -514,20 +546,31 @@ async function POST_impl(req: NextRequest) {
       }
       const requiresReview = fields.some((f) => f.review_required)
       console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview)
+      // TRUTHFUL READER TELEMETRY: every reader-identity field below derives from the
+      // per-page ReaderExecutionTrace built at the real provider-call site — NOT from
+      // a constant. `provider` stays the pipeline identity (accurate); the READER
+      // identity is reported separately + honestly (reader_provider/model/fallback_used).
+      const coreReader = deriveReaderTelemetry(coreTraces)
       return NextResponse.json({
         ok: true, doc_type_id: effectiveReaderDocTypeId, fields,
         date_ensemble: ens.diag,
         pages: corePageResults, page_count: rawFiles.length,
+        // Pipeline identity (accurate — this IS the Core arbitration pipeline).
         provider: 'one-brain-core:translation-b2',
-        // Core B2 reads with the PRIMARY model; report it honestly (was mislabelled
-        // 'gemini-2.5-flash' — a flash model the Core path never uses as primary).
-        model: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview'),
+        // READER identity — derived from the actual trace, never a constant.
+        model: coreReader.model,
+        reader_provider: coreReader.reader_provider,
+        reader_model: coreReader.model,
         status: 'ok:core-b2',
         core_version: 'b2',
         // CUTOVER: the Core path is the canonical arbitration path. Marked honestly
         // so the client/telemetry can distinguish it from the legacy fallback below.
         core_path: 'canonical',
-        fallback_used: false,
+        // Derived from traces: true iff a fallback actually SERVED a page's read.
+        fallback_used: coreReader.fallback_used,
+        provider_call_count: coreReader.provider_call_count,
+        // PII-free per-page execution telemetry (provider/model/latency/counts only).
+        reader_execution: coreTraces,
         // CANONICAL_CONTINUITY: canonical document id for session linkage
         canonical_document_id: canonicalDocumentId,
       }, { status: 200 })
@@ -556,6 +599,8 @@ async function POST_impl(req: NextRequest) {
   const legacyCyrillicMap = new Map<string, string>()
   const pageResults: Array<{ page: number; ok: boolean; status: string; ms: number; provider?: string; error?: string }> = []
   const legacyProviderErrors: OcrProviderError[] = []
+  // TRUTHFUL READER TELEMETRY: per-page traces from the legacy reader path too.
+  const legacyTraces: ReaderExecutionTrace[] = []
   let lastResult: Awaited<ReturnType<typeof readDocument>> | null = null
 
   type LegacyPage =
@@ -607,6 +652,7 @@ async function POST_impl(req: NextRequest) {
     }
     const r = p.r
     lastResult = r
+    if (r.reader_trace) legacyTraces.push(r.reader_trace)
     pageResults.push({ page: p.page, ok: r.ok, status: r.status, ms: r.ms, ...(r.provider ? { provider: r.provider } : {}), ...(r.error ? { error: r.error } : {}) })
     if (!r.ok && r.provider_error) legacyProviderErrors.push(r.provider_error)
     if (r.ok && Array.isArray(r.fields)) {
@@ -736,6 +782,9 @@ async function POST_impl(req: NextRequest) {
     ocrFieldSafety = { applied: true, unresolved_critical: res.anyUnresolvedCritical }
   }
 
+  // TRUTHFUL READER TELEMETRY: derive the legacy response reader-identity fields from
+  // the per-page traces built at the real provider-call site (never a constant).
+  const legacyReader = deriveReaderTelemetry(legacyTraces)
   return NextResponse.json({
     ok,
     doc_type_id: effectiveReaderDocTypeId,
@@ -748,7 +797,15 @@ async function POST_impl(req: NextRequest) {
     // or a thrown Core error. The provider/model below stay the REAL legacy reader
     // values — never relabeled as canonical-clean, never downgrading review state.
     core_path: 'legacy_fallback',
-    fallback_used: true,
+    // TRUTHFUL READER TELEMETRY: `fallback_used` now means "a READER fallback (the
+    // #13 OpenAI fallback) actually SERVED a read" — derived from the per-page trace,
+    // never hardcoded. `core_path:'legacy_fallback'` already signals this path is the
+    // legacy branch, so the two are no longer conflated.
+    fallback_used: legacyReader.fallback_used,
+    provider_call_count: legacyReader.provider_call_count,
+    reader_execution: legacyTraces,
+    reader_provider: legacyReader.reader_provider,
+    reader_model: legacyReader.model,
     // CANONICAL_CONTINUITY: canonical document id for session linkage
     canonical_document_id: legacyCanonicalDocumentId,
     pages: pageResults,
@@ -756,7 +813,8 @@ async function POST_impl(req: NextRequest) {
     // Backward compat: keep the single-call shape too for legacy clients.
     anchor_read: lastResult?.anchor_read ?? null,
     provider: lastResult?.provider ?? null,
-    model: lastResult?.model ?? null,
+    // READER model derived from the actual trace (finalModel) — never a constant.
+    model: legacyReader.model ?? lastResult?.model ?? null,
     ms: pageResults.reduce((s, p) => s + p.ms, 0),
     status: ok ? 'ok:legacy-reader' : (lastResult?.status ?? 'no_fields'),
     ...(ok ? {} : { error: lastResult?.error ?? 'No fields extracted across all pages.' }),

@@ -34,7 +34,7 @@ class OpenAiVisionProvider implements VisionProvider {
   ): Promise<VisionReadResult> {
     const t0 = Date.now()
     const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) return { ok: false, fields: [], model: null, ms: 0, error: 'no OPENAI_API_KEY set' }
+    if (!apiKey) return { ok: false, fields: [], model: null, ms: 0, error: 'no OPENAI_API_KEY set', attempts: 0 }
 
     const model = openaiVisionModel()
     const prompt = buildPrompt(spec)
@@ -65,17 +65,17 @@ class OpenAiVisionProvider implements VisionProvider {
         }),
       })
       if (!res.ok) {
-        return { ok: false, fields: [], model, ms: Date.now() - t0, error: `HTTP ${res.status}`, errorStatus: res.status }
+        return { ok: false, fields: [], model, ms: Date.now() - t0, error: `HTTP ${res.status}`, errorStatus: res.status, attempts: 1 }
       }
       const json = await res.json().catch(() => null)
       const text: string | undefined = json?.choices?.[0]?.message?.content
-      if (!text) return { ok: false, fields: [], model, ms: Date.now() - t0, error: 'empty response' }
+      if (!text) return { ok: false, fields: [], model, ms: Date.now() - t0, error: 'empty response', attempts: 1 }
 
       let parsed: Record<string, { cyrillic?: unknown; iso_date?: unknown; can_read?: unknown; confidence?: unknown; reason?: unknown }>
       try {
         parsed = JSON.parse(text.replace(/^```json\s*|\s*```$/g, '').trim())
       } catch {
-        return { ok: false, fields: [], model, ms: Date.now() - t0, error: 'invalid JSON from model' }
+        return { ok: false, fields: [], model, ms: Date.now() - t0, error: 'invalid JSON from model', attempts: 1 }
       }
       const fields: VisionFieldRead[] = []
       for (const key of Object.keys(parsed)) {
@@ -91,11 +91,11 @@ class OpenAiVisionProvider implements VisionProvider {
           reason: typeof v.reason === 'string' ? v.reason : '',
         })
       }
-      return { ok: true, fields, model, ms: Date.now() - t0 }
+      return { ok: true, fields, model, ms: Date.now() - t0, attempts: 1 }
     } catch (e: unknown) {
       const err = e as { name?: string; message?: string }
-      if (err?.name === 'AbortError') return { ok: false, fields: [], model, ms: Date.now() - t0, error: 'timeout', errorTimeout: true }
-      return { ok: false, fields: [], model, ms: Date.now() - t0, error: err?.message ?? 'fetch error' }
+      if (err?.name === 'AbortError') return { ok: false, fields: [], model, ms: Date.now() - t0, error: 'timeout', errorTimeout: true, attempts: 1 }
+      return { ok: false, fields: [], model, ms: Date.now() - t0, error: err?.message ?? 'fetch error', attempts: 1 }
     } finally {
       clearTimeout(timeout)
     }

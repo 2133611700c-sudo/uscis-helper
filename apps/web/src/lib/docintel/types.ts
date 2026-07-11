@@ -85,6 +85,46 @@ export interface VisionReadResult {
   errorStatus?: number
   /** True when the failure was a client/network timeout (AbortError). */
   errorTimeout?: boolean
+  /**
+   * Truthful telemetry: the number of provider HTTP attempts THIS read op actually
+   * made (each fetch to the vendor). Gemini loops a primary+flash model chain, so it
+   * may be >1; OpenAI makes exactly 1 (0 if it never called, e.g. no API key). Set on
+   * both success and failure. Optional for backward compat; consumers default to 1.
+   */
+  attempts?: number
+}
+
+/**
+ * ReaderExecutionTrace — the SINGLE honest record of what the reader actually did,
+ * built at the real provider-call site (documentFieldReader.readDocument). Every
+ * telemetry field the API reports (model / reader provider / fallback_used /
+ * provider_call_count) MUST derive from this trace, never from a constant. PII-FREE:
+ * carries only provider names, model ids, latencies and counts — never field values,
+ * raw Cyrillic, or any OCR text.
+ */
+export interface ReaderExecutionTrace {
+  /** The configured primary provider name (e.g. 'gemini'), or the injected provider's name. */
+  configuredPrimaryProvider: string
+  /** The configured primary model (primaryGeminiModel()) — honest even if it failed. */
+  configuredPrimaryModel: string
+  primaryAttempted: boolean
+  /** 'skipped' only when a provider was injected via opts.provider. */
+  primaryOutcome: 'success' | 'failed' | 'skipped'
+  fallbackAttempted: boolean
+  /** 'openai' when the #13 fallback ran, else null. */
+  fallbackProvider: string | null
+  /** The actual fb model when it read, else null. */
+  fallbackModel: string | null
+  fallbackOutcome: 'success' | 'failed' | 'not_attempted'
+  /** The provider whose read is being returned ('gemini'|'openai'|injected name|null on total failure). */
+  finalProvider: string | null
+  /** The actual model of the returned read (read.model) — NEVER a constant. */
+  finalModel: string | null
+  /** Real total HTTP attempts = primary attempts + fallback attempts. */
+  providerCallCount: number
+  primaryLatencyMs: number | null
+  fallbackLatencyMs: number | null
+  totalReaderLatencyMs: number
 }
 
 /** A provider that reads document fields from an image. Vendor-agnostic. */
@@ -139,4 +179,10 @@ export interface DocumentReadResult {
     identity_hash_prefix?: string
     runs?: number
   }
+  /**
+   * Truthful reader execution telemetry (issue: truthful-reader-telemetry). Built at
+   * the real provider-call site so the route derives model / reader provider /
+   * fallback_used / provider_call_count from ACTUAL values, never a constant. PII-free.
+   */
+  reader_trace?: ReaderExecutionTrace
 }

@@ -188,7 +188,7 @@ export class GeminiVisionProvider implements VisionProvider {
     const t0 = Date.now()
     // Resolve the key from ANY GEMINI_API_KEY* env name (owner rotates names).
     const apiKey = getGeminiApiKey()
-    if (!apiKey) return { ok: false, fields: [], model: null, ms: 0, error: 'no GEMINI_API_KEY* set' }
+    if (!apiKey) return { ok: false, fields: [], model: null, ms: 0, error: 'no GEMINI_API_KEY* set', attempts: 0 }
 
     // 2.5-pro + thinking on a full-page scan runs ~20-40s; the old 8s default
     // would abort it every time. Default high; callers can still override.
@@ -212,12 +212,16 @@ export class GeminiVisionProvider implements VisionProvider {
     // an empty success). Reset to undefined on a non-HTTP outcome.
     let lastStatus: number | undefined
     let lastTimeout = false
+    // Truthful telemetry: count every provider HTTP attempt actually made across the
+    // primary+flash model chain (both ok and failed calls). Reported as `attempts`.
+    let providerAttempts = 0
 
     for (const model of modelFallback()) {
       for (let a = 0; a < attempts; a++) {
         const remaining = deadline - Date.now()
         if (remaining < 3000) { lastErr = 'deadline'; break } // not enough time for another attempt
         try {
+          providerAttempts++
           const { ok, status, json } = await callGemini(model, apiKey, imageB64, mimeType, prompt, remaining)
           if (ok) {
             const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
@@ -242,7 +246,7 @@ export class GeminiVisionProvider implements VisionProvider {
                 reason: typeof v.reason === 'string' ? v.reason : '',
               })
             }
-            return { ok: true, fields, model, ms: Date.now() - t0 }
+            return { ok: true, fields, model, ms: Date.now() - t0, attempts: providerAttempts }
           }
           lastErr = `HTTP ${status}`
           lastStatus = status
@@ -258,7 +262,7 @@ export class GeminiVisionProvider implements VisionProvider {
         }
       }
     }
-    return { ok: false, fields: [], model: null, ms: Date.now() - t0, error: lastErr, errorStatus: lastStatus, errorTimeout: lastTimeout }
+    return { ok: false, fields: [], model: null, ms: Date.now() - t0, error: lastErr, errorStatus: lastStatus, errorTimeout: lastTimeout, attempts: providerAttempts }
   }
 }
 

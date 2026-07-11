@@ -31,7 +31,9 @@ import { OcrCoordinationUnavailable } from '@/lib/v1/ocrCoordination'
 import type {
   DocumentReadResult,
   ExtractedDocField,
+  ReaderExecutionTrace,
   VisionProvider,
+  VisionReadResult,
 } from './types'
 
 export async function readDocument(
@@ -47,6 +49,10 @@ export async function readDocument(
     cacheScope?: string
   } = {},
 ): Promise<DocumentReadResult> {
+  // Wall-clock start for totalReaderLatencyMs in the ReaderExecutionTrace. Normal
+  // app code (not a workflow), so Date.now() is the correct clock here.
+  const readerStart = Date.now()
+
   const spec = getDocTypeSpec(docTypeId)
   if (!spec) {
     return {
@@ -79,6 +85,10 @@ export async function readDocument(
   // byte-identical direct call. enforce ⇒ a winner-failure/loser-timeout surfaces
   // OcrCoordinationUnavailable, which we map to an honest non-2xx (never a crash).
   const provider = opts.provider ?? defaultVisionProvider
+  // Was a provider injected? Then the "primary" is that injected provider, not the
+  // configured Gemini primary — the trace must reflect this honestly (no fabricated
+  // gemini attempt). primaryOutcome='skipped' means "configured primary was bypassed".
+  const providerInjected = !!opts.provider
   let read
   try {
     read = await coordinatedDocumentRead(imageBuffer, mimeType, spec, docTypeId, provider, {
@@ -89,16 +99,42 @@ export async function readDocument(
     })
   } catch (err) {
     if (err instanceof OcrCoordinationUnavailable) {
+      // Honest trace: the primary was attempted but coordination made it unavailable;
+      // no model, no fallback. PII-free, no fabricated values.
       return {
         ok: false, doc_type_id: docTypeId, fields: [], anchor_read: false,
         provider: provider.name, model: null, ms: 0,
         status: `ocr_unavailable:${err.errorClass}`,
         error: err.message,
         provider_error: classifyProviderError(503, undefined, { marker: err.errorClass }),
+        reader_trace: {
+          configuredPrimaryProvider: providerInjected ? provider.name : 'gemini',
+          configuredPrimaryModel: providerInjected ? provider.name : primaryGeminiModel(),
+          primaryAttempted: true,
+          primaryOutcome: 'failed',
+          fallbackAttempted: false,
+          fallbackProvider: null,
+          fallbackModel: null,
+          fallbackOutcome: 'not_attempted',
+          finalProvider: provider.name,
+          finalModel: null,
+          providerCallCount: 0,
+          primaryLatencyMs: null,
+          fallbackLatencyMs: null,
+          totalReaderLatencyMs: Date.now() - readerStart,
+        },
       }
     }
     throw err
   }
+
+  // TRUTHFUL TELEMETRY: capture the PRIMARY read outcome BEFORE the fallback block
+  // can replace `read`. `primaryRead` is the exact result the configured/injected
+  // primary produced; `fallbackRead` is set only if the #13 fallback actually ran.
+  const primaryRead: VisionReadResult = read
+  const primaryOk = read.ok
+  let fallbackRead: VisionReadResult | null = null
+  let fallbackAttempted = false
 
   // ── READER RESILIENCE (ONE_BRAIN_READER_FALLBACK, default OFF) ──────────────
   // On a RETRIABLE primary failure (rate-limit 429 / 5xx / timeout/deadline), try ONE OpenAI
@@ -110,18 +146,30 @@ export async function readDocument(
       read.errorStatus === 408 || read.errorTimeout === true
     if (retriable) {
       try {
+        fallbackAttempted = true
         const fb = await coordinatedDocumentRead(imageBuffer, mimeType, spec, docTypeId, openaiVisionProvider, {
           timeoutMs: Math.min(opts.timeoutMs ?? READER_FALLBACK_TIMEOUT_MS, READER_FALLBACK_TIMEOUT_MS),
           attemptsPerModel: 1,
           tenantScope: opts.cacheScope,
           product: opts.product,
         })
+        fallbackRead = fb
         if (fb.ok) read = fb // use the fallback read; non-primary model ⇒ force-reviewed
       } catch {
         // the fallback must NEVER crash the primary read path
       }
     }
   }
+
+  // Build the ONE ReaderExecutionTrace from ACTUAL values. Every API telemetry field
+  // derives from this — never from a constant. `fallbackServed` = fallback replaced
+  // the returned read; the returned `read` is either the primary or the fallback.
+  const fallbackServed = fallbackRead !== null && fallbackRead.ok && read === fallbackRead
+  const reader_trace = buildReaderTrace({
+    provider, providerInjected, primaryRead, primaryOk,
+    fallbackAttempted, fallbackRead, fallbackServed, read,
+    totalReaderLatencyMs: Date.now() - readerStart,
+  })
 
   if (!read.ok) {
     // Honest degradation (P1): classify the provider failure into a typed OCR
@@ -142,6 +190,7 @@ export async function readDocument(
       provider: provider.name, model: read.model, ms: read.ms,
       status: `vision_failed:${read.error ?? 'unknown'}`, error: read.error,
       ...(providerError ? { provider_error: providerError } : {}),
+      reader_trace,
     }
   }
 
@@ -312,6 +361,80 @@ export async function readDocument(
     provider: provider.name, model: read.model, ms: read.ms,
     status: `ok:${read.model}:${read.ms}ms:${fields.length}f`,
     ...(selfConsistency ? { self_consistency: selfConsistency } : {}),
+    reader_trace,
+  }
+}
+
+/**
+ * Build the single ReaderExecutionTrace from ACTUAL read results. PII-free: only
+ * provider names, model ids, latencies and counts — never field values or OCR text.
+ *
+ * When a provider was injected (opts.provider), it IS the primary: configuredPrimary
+ * reflects the injected provider and its real model, and primaryOutcome is
+ * 'skipped'/... honestly — we do NOT fabricate a gemini attempt that never happened.
+ */
+function buildReaderTrace(args: {
+  provider: VisionProvider
+  providerInjected: boolean
+  primaryRead: VisionReadResult
+  primaryOk: boolean
+  fallbackAttempted: boolean
+  fallbackRead: VisionReadResult | null
+  fallbackServed: boolean
+  read: VisionReadResult
+  totalReaderLatencyMs: number
+}): ReaderExecutionTrace {
+  const {
+    provider, providerInjected, primaryRead, primaryOk,
+    fallbackAttempted, fallbackRead, fallbackServed, read, totalReaderLatencyMs,
+  } = args
+
+  // configuredPrimary: the configured Gemini primary normally; the injected provider
+  // (+ its actual read model) when one was injected — honest either way.
+  const configuredPrimaryProvider = providerInjected ? provider.name : 'gemini'
+  const configuredPrimaryModel = providerInjected
+    ? (primaryRead.model ?? provider.name)
+    : primaryGeminiModel()
+
+  // primaryOutcome: 'skipped' iff a provider was injected AND it is NOT gemini —
+  // i.e. the CONFIGURED gemini primary was bypassed (there is no READER_PROVIDER
+  // mode; an injected provider is the only way this happens). Otherwise it reflects
+  // the real read. `primaryAttempted=false` marks the configured primary as bypassed.
+  const configuredPrimaryBypassed = providerInjected && provider.name !== 'gemini'
+  const primaryOutcome: ReaderExecutionTrace['primaryOutcome'] =
+    configuredPrimaryBypassed ? 'skipped' : (primaryOk ? 'success' : 'failed')
+
+  // Real HTTP attempts the returned read op made (from the provider counter). This
+  // ALWAYS reflects the actual calls — including an injected provider's calls — so
+  // providerCallCount is honest even when the configured gemini primary was bypassed.
+  const primaryAttemptCount = primaryRead.attempts ?? 1
+
+  const fallbackProvider = fallbackAttempted ? openaiVisionProvider.name : null
+  const fallbackModel = fallbackRead && fallbackRead.ok ? fallbackRead.model : null
+  const fallbackOutcome: ReaderExecutionTrace['fallbackOutcome'] =
+    !fallbackAttempted ? 'not_attempted' : (fallbackRead && fallbackRead.ok ? 'success' : 'failed')
+  const fallbackAttemptCount = fallbackAttempted ? (fallbackRead?.attempts ?? 1) : 0
+
+  // finalProvider/finalModel: derived from the read actually returned. If the
+  // fallback served ⇒ openai/fb.model; else the primary provider + its real model.
+  const finalProvider = fallbackServed ? openaiVisionProvider.name : provider.name
+  const finalModel = read.model
+
+  return {
+    configuredPrimaryProvider,
+    configuredPrimaryModel,
+    primaryAttempted: !configuredPrimaryBypassed,
+    primaryOutcome,
+    fallbackAttempted,
+    fallbackProvider,
+    fallbackModel,
+    fallbackOutcome,
+    finalProvider,
+    finalModel,
+    providerCallCount: primaryAttemptCount + fallbackAttemptCount,
+    primaryLatencyMs: primaryRead.ms,
+    fallbackLatencyMs: fallbackRead ? fallbackRead.ms : null,
+    totalReaderLatencyMs,
   }
 }
 
