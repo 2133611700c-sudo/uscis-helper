@@ -46,6 +46,7 @@ import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked, isProviderError } from '@/lib/ocr/types'
 import { httpStatusForOcrError, type OcrProviderError } from '@/lib/ocr/ocrErrors'
 import { applyDateEnsemble, isDateFieldName, extractDateCandidatesFromText } from '@/lib/docintel/ensemble/applyDateEnsemble'
+import { isBirthCertLogicEnabled, applyBirthCertLogic } from '@/lib/docintel/validation/birthCertLogic'
 import { readDateRegionsWithVision } from '@/lib/docintel/ensemble/dateRegionRead'
 import { HANDWRITTEN_FABRICATION_RISK_CLASSES } from '@/lib/docintel/antiFabricationGate'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
@@ -504,6 +505,13 @@ async function POST_impl(req: NextRequest) {
       // the Core path because this is the live return (status ok:core-b2).
       const ens = await runDateEnsemble(fields, effectiveReaderDocTypeId, rawFiles[0])
       fields = ens.fields
+      // Birth-cert logical validation (flag-gated; default OFF ⇒ byte-identical).
+      // Runs AFTER the ensemble so it sees the ensemble's review flags too.
+      if (isBirthCertLogicEnabled()) {
+        const bc = applyBirthCertLogic(fields, effectiveReaderDocTypeId)
+        if (bc.applied && bc.flags.length) console.info('[birth_cert_logic]', JSON.stringify({ flags: bc.flags }))
+        fields = bc.fields
+      }
       const requiresReview = fields.some((f) => f.review_required)
       console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview)
       return NextResponse.json({
@@ -702,6 +710,14 @@ async function POST_impl(req: NextRequest) {
   const legacyEns = ok ? await runDateEnsemble(fields, effectiveReaderDocTypeId, rawFiles[0]) : { fields, diag: { status: 'off' } as Record<string, unknown> }
   fields = legacyEns.fields
   const dateEnsembleDiag = legacyEns.diag
+
+  // Birth-cert logical validation (flag-gated; default OFF ⇒ byte-identical).
+  // Same shared helper as the Core path; runs AFTER the legacy ensemble.
+  if (isBirthCertLogicEnabled()) {
+    const bc = applyBirthCertLogic(fields, effectiveReaderDocTypeId)
+    if (bc.applied && bc.flags.length) console.info('[birth_cert_logic]', JSON.stringify({ flags: bc.flags }))
+    fields = bc.fields
+  }
 
   // ── C3: Global OCR field safety guard (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
   // OFF ⇒ this block is skipped ⇒ byte-identical. ON ⇒ unsafe critical reads (hard-case,
