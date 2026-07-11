@@ -260,17 +260,19 @@ async function POST_impl(req: NextRequest) {
     }
   }
 
-  // ── One Brain intake SHADOW — default OFF ⇒ byte-identical no-op ──────────
-  // Observes what the DocumentIntakeBrain would decide from the RAW first page with NO human
-  // hint, ALONGSIDE the current path. Never changes the response; fail-open; PII-free log only.
-  // The flag is checked FIRST so OFF costs nothing (no buffer read, no provider build, no
-  // latency ⇒ no 504 risk). Enable only on Preview via ONE_BRAIN_INTAKE_SHADOW=1.
+  // ── One Brain intake + B→A CONTROLLED bridge — default OFF ⇒ byte-identical ──────────────────
+  // The intake brain reads the RAW first page with NO human hint. With ONE_BRAIN_CONTROLS_READER on
+  // (Preview only), when the bridge decision is SAFE and maps to a real reader-registry type, the
+  // WHOLE downstream (quality gate, reader, knowledge context, ensemble, response) uses the
+  // INTAKE-detected docType instead of the manual hint — automatic reader selection. Both flags are
+  // checked FIRST ⇒ OFF costs nothing. Fail-open: ANY error keeps the manual type. PII-free log.
+  let effectiveReaderDocTypeId = docTypeId
   if (isIntakeShadowEnabled() || isReaderControlEnabled()) {
     try {
       const shadowProviders = buildRealIntakeProviders()
       if (shadowProviders) {
         const firstBuf = Buffer.from(new Uint8Array(await rawFiles[0].arrayBuffer()))
-        // ONE intake run, reused by both the observe-shadow and the B→A decision-shadow below.
+        // ONE intake run, reused by both the observe-shadow and the B→A bridge decision below.
         const obs = await runIntakeShadow(
           firstBuf,
           shadowProviders,
@@ -278,13 +280,16 @@ async function POST_impl(req: NextRequest) {
           { traceId: 'translation-shadow', log: (m, p) => console.info(m, JSON.stringify(p)) },
         )
         if (isReaderControlEnabled()) {
-          // B→A DECISION-SHADOW (ONE_BRAIN_CONTROLS_READER, default OFF): record — PII-free — what a
-          // bridge WOULD decide. The reader still uses the MANUAL docTypeId; nothing here is acted on.
-          console.info('[one_brain_reader_bridge]', JSON.stringify(decideReaderDocType(docTypeId, obs)))
+          const decision = decideReaderDocType(docTypeId, obs)
+          console.info('[one_brain_reader_bridge]', JSON.stringify(decision))
+          // CONTROLLED: adopt the intake type ONLY when safe AND it maps to a real reader-registry
+          // type (bridgedReaderDocTypeId non-null). Ambiguous / unmapped / not-ready / unknown ⇒ null
+          // ⇒ keep the manual type (fail-closed). Never reads with unknown/unsupported/not_a_document.
+          if (decision.bridgedReaderDocTypeId) effectiveReaderDocTypeId = decision.bridgedReaderDocTypeId
         }
       }
     } catch {
-      // shadow must NEVER affect the live translation response
+      // the bridge/shadow must NEVER affect the live translation response beyond the docType choice
     }
   }
 
@@ -292,15 +297,15 @@ async function POST_impl(req: NextRequest) {
   // Runs BEFORE any Gemini/Vision call. Blocks tiny images (82KB marriage
   // apostille proved insufficient). Warns on >2MB images (503 risk).
   // Only applies to Ukrainian identity documents (not US forms).
-  if (isUkrainianIdentityDoc(docTypeId)) {
-    const docClass = docintelIdToDocumentClass(docTypeId)
+  if (isUkrainianIdentityDoc(effectiveReaderDocTypeId)) {
+    const docClass = docintelIdToDocumentClass(effectiveReaderDocTypeId)
     // Use largest file for the size check — if any page is too small, block all
     const largestFile = rawFiles.reduce((max, f) => f.size > max.size ? f : max, rawFiles[0])
     const smallestFile = rawFiles.reduce((min, f) => f.size < min.size ? f : min, rawFiles[0])
     // Block if the smallest file is below the minimum (every page must be readable)
     const qualityCheck = checkImageQuality(docClass, smallestFile.size)
     if (qualityCheck.action === 'needs_better_scan') {
-      console.warn('[documentClassPolicy] needs_better_scan:', qualityCheck.reason, 'docTypeId:', docTypeId)
+      console.warn('[documentClassPolicy] needs_better_scan:', qualityCheck.reason, 'effectiveReaderDocTypeId:', effectiveReaderDocTypeId)
       return NextResponse.json(
         {
           ok: false,
@@ -309,13 +314,13 @@ async function POST_impl(req: NextRequest) {
           reason: qualityCheck.reason,
           fields: null,
           error: 'Image quality insufficient for reliable extraction. Please upload a higher-resolution scan.',
-          doc_type_id: docTypeId,
+          doc_type_id: effectiveReaderDocTypeId,
         },
         { status: 200 },
       )
     }
     if (checkImageQuality(docClass, largestFile.size).action === 'resize') {
-      console.warn('[documentClassPolicy] image_large_resize_recommended:', largestFile.size, 'bytes, docTypeId:', docTypeId)
+      console.warn('[documentClassPolicy] image_large_resize_recommended:', largestFile.size, 'bytes, effectiveReaderDocTypeId:', effectiveReaderDocTypeId)
       // Continue — do not block, but log for monitoring
     }
   }
@@ -347,7 +352,7 @@ async function POST_impl(req: NextRequest) {
       // in PARALLEL, so a generous per-page budget still fits maxDuration=120.
       // attemptsPerModel:1 so a slow primary doesn't burn the budget on a retry —
       // the budget goes to the faster fallback models instead.
-      const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation' })
+      const r = await readDocument(buffer, file.type || 'image/jpeg', effectiveReaderDocTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation' })
       return { i, r }
     }))
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
@@ -371,7 +376,7 @@ async function POST_impl(req: NextRequest) {
     // unaffected: it produces no provider_error and falls through as before.
     if (allCandidates.length === 0 && coreProviderErrors.length > 0) {
       const chosen = pickMostSevereOcrError(coreProviderErrors)
-      console.warn('[Core B2] provider failure — honest degradation:', chosen.error_code, JSON.stringify({ doc_type_id: docTypeId, pages: corePageResults.map((p) => p.status) }))
+      console.warn('[Core B2] provider failure — honest degradation:', chosen.error_code, JSON.stringify({ doc_type_id: effectiveReaderDocTypeId, pages: corePageResults.map((p) => p.status) }))
       return ocrUnavailableResponse(chosen)
     }
     // 1A — MRZ authority for the international passport (flag-gated, default OFF
@@ -379,15 +384,15 @@ async function POST_impl(req: NextRequest) {
     // passport_number/dob/expiry/names so the field doesn't fall to
     // critical_no_mrz_anchor. Fail-open: Vision blocked / no MRZ lines → [] →
     // identical to today. Vision OCR runs on the first (data) page only.
-    if (process.env.MRZ_TRANSLATION_ENABLED === '1' && docTypeId === 'ua_international_passport' && rawFiles.length > 0) {
+    if (process.env.MRZ_TRANSLATION_ENABLED === '1' && effectiveReaderDocTypeId === 'ua_international_passport' && rawFiles.length > 0) {
       try {
         const firstBuf = Buffer.from(await rawFiles[0].arrayBuffer())
         const vis = await googleVisionProvider.extractText({ imageBuffer: firstBuf, mimeType: rawFiles[0].type || 'image/jpeg' })
         if (!isBlocked(vis) && !isProviderError(vis) && vis.raw_text) {
-          const mrz = mrzCandidatesForTranslation(vis.raw_text, docTypeId)
+          const mrz = mrzCandidatesForTranslation(vis.raw_text, effectiveReaderDocTypeId)
           if (mrz.length > 0) {
             allCandidates.push(...mrz)
-            console.info('[Core B2] MRZ_WIRED:', mrz.length, 'candidates for', docTypeId, 'valid=', mrz[0]?.mrzCheckValid)
+            console.info('[Core B2] MRZ_WIRED:', mrz.length, 'candidates for', effectiveReaderDocTypeId, 'valid=', mrz[0]?.mrzCheckValid)
           }
         }
       } catch (e) {
@@ -396,7 +401,7 @@ async function POST_impl(req: NextRequest) {
     }
     const canonicalFields = applyKnowledgeBrainIfEnabled(
       allCandidates,
-      buildKnowledgeContext({ docTypeId, product: 'translation' }),
+      buildKnowledgeContext({ docTypeId: effectiveReaderDocTypeId, product: 'translation' }),
     )
     if (canonicalFields.length > 0) {
       // Phase 1 (one canonical currency): wrap the arbitrated fields into the ONE
@@ -412,7 +417,7 @@ async function POST_impl(req: NextRequest) {
       const canonicalResult = buildCanonicalResult({
         documentSessionId,
         product: 'translation',
-        docType: docTypeId,
+        docType: effectiveReaderDocTypeId,
         fields: canonicalFields,
         createdAt: new Date().toISOString(),
       })
@@ -444,12 +449,12 @@ async function POST_impl(req: NextRequest) {
       let fields = toTranslationRows(canonicalResult.fields, cyrillicMap)
       // Cross-engine date ensemble (handwritten-risk; flag-gated) — wired HERE in
       // the Core path because this is the live return (status ok:core-b2).
-      const ens = await runDateEnsemble(fields, docTypeId, rawFiles[0])
+      const ens = await runDateEnsemble(fields, effectiveReaderDocTypeId, rawFiles[0])
       fields = ens.fields
       const requiresReview = fields.some((f) => f.review_required)
       console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview)
       return NextResponse.json({
-        ok: true, doc_type_id: docTypeId, fields,
+        ok: true, doc_type_id: effectiveReaderDocTypeId, fields,
         date_ensemble: ens.diag,
         pages: corePageResults, page_count: rawFiles.length,
         provider: 'one-brain-core:translation-b2',
@@ -514,7 +519,7 @@ async function POST_impl(req: NextRequest) {
       // a full page, so 15s aborted it every time → always fell to the flash
       // fallback → every field flagged review. Pages run in parallel under the
       // 60s route budget, so 25s is safe.
-      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 25_000, product: 'translation' })
+      const r = await readDocument(buffer, effectiveMime, effectiveReaderDocTypeId, { timeoutMs: 25_000, product: 'translation' })
       return { kind: 'read', page: i + 1, r }
     } catch (e: any) {
       console.error('[translation/vision-extract page', i + 1, ']', e?.message ?? e)
@@ -557,7 +562,7 @@ async function POST_impl(req: NextRequest) {
   // the legacy retry then hit a 429/5xx/timeout.
   if (legacyCandidates.length === 0 && legacyProviderErrors.length > 0) {
     const chosen = pickMostSevereOcrError(legacyProviderErrors)
-    console.warn('[legacy] provider failure — honest degradation:', chosen.error_code, JSON.stringify({ doc_type_id: docTypeId, pages: pageResults.map((p) => p.status) }))
+    console.warn('[legacy] provider failure — honest degradation:', chosen.error_code, JSON.stringify({ doc_type_id: effectiveReaderDocTypeId, pages: pageResults.map((p) => p.status) }))
     return ocrUnavailableResponse(chosen)
   }
 
@@ -565,14 +570,14 @@ async function POST_impl(req: NextRequest) {
   // to the Core path. Empty candidate set ⇒ empty arbitrated set ⇒ ok:false below.
   const legacyCanonicalFields = applyKnowledgeBrainIfEnabled(
     legacyCandidates,
-    buildKnowledgeContext({ docTypeId, product: 'translation' }),
+    buildKnowledgeContext({ docTypeId: effectiveReaderDocTypeId, product: 'translation' }),
   )
   const legacyDocumentSessionId =
     (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract'
   const legacyCanonicalResult = buildCanonicalResult({
     documentSessionId: legacyDocumentSessionId,
     product: 'translation',
-    docType: docTypeId,
+    docType: effectiveReaderDocTypeId,
     fields: legacyCanonicalFields,
     createdAt: new Date().toISOString(),
   })
@@ -612,8 +617,8 @@ async function POST_impl(req: NextRequest) {
   // ── POLICY_WIRED: post-extraction document-class guards ───────────────────
   // Applied AFTER extraction, BEFORE response. Only for Ukrainian identity docs.
   let translationPolicyGuardStatus: 'not_applicable' | 'applied' | 'role_guard_triggered' = 'not_applicable'
-  if (ok && isUkrainianIdentityDoc(docTypeId)) {
-    const docClass = docintelIdToDocumentClass(docTypeId)
+  if (ok && isUkrainianIdentityDoc(effectiveReaderDocTypeId)) {
+    const docClass = docintelIdToDocumentClass(effectiveReaderDocTypeId)
 
     // Wire 2: applyHardCaseReviewOverride — forces review_required=true on hard-case classes
     const hardCaseCheck = applyHardCaseReviewOverride(docClass, { review_required: false })
@@ -639,7 +644,7 @@ async function POST_impl(req: NextRequest) {
 
   // ── ENSEMBLE_DATE_ENABLED (default OFF): cross-engine date check (legacy path) ──
   // Same shared helper as the Core path. OFF ⇒ skipped (byte-identical).
-  const legacyEns = ok ? await runDateEnsemble(fields, docTypeId, rawFiles[0]) : { fields, diag: { status: 'off' } as Record<string, unknown> }
+  const legacyEns = ok ? await runDateEnsemble(fields, effectiveReaderDocTypeId, rawFiles[0]) : { fields, diag: { status: 'off' } as Record<string, unknown> }
   fields = legacyEns.fields
   const dateEnsembleDiag = legacyEns.diag
 
@@ -651,7 +656,7 @@ async function POST_impl(req: NextRequest) {
   if (isOcrFieldSafetyEnabled()) {
     const res = applyOcrFieldSafety(fields as never[], {
       flow: 'translation_public',
-      document_class: docintelIdToDocumentClass(docTypeId),
+      document_class: docintelIdToDocumentClass(effectiveReaderDocTypeId),
     }, { zeroRecognition: !ok })
     // applyOcrFieldSafety returns SafeField[] (kind optional); the row type is the
     // adapter's FieldOut (kind required). The guard preserves every input property
@@ -662,7 +667,7 @@ async function POST_impl(req: NextRequest) {
 
   return NextResponse.json({
     ok,
-    doc_type_id: docTypeId,
+    doc_type_id: effectiveReaderDocTypeId,
     fields,
     ocr_field_safety: ocrFieldSafety,
     date_ensemble: dateEnsembleDiag,
