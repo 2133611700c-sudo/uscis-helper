@@ -4,7 +4,7 @@
  * agreement/readiness/safety PII-free, and fails closed to manual on not-ready/unknown/not-run.
  */
 import { describe, it, expect } from 'vitest'
-import { decideReaderDocType, isReaderControlEnabled } from '../readerBridge'
+import { decideReaderDocType, isReaderControlEnabled, intakeToReaderDocType } from '../readerBridge'
 import type { ShadowObservation } from '../shadowRunner'
 
 function obs(over: Partial<ShadowObservation>): ShadowObservation {
@@ -75,8 +75,37 @@ describe('reader bridge — decideReaderDocType (decision-shadow: reader ALWAYS 
     const json = JSON.stringify(d)
     // keys are a closed set — no name/date/number/value fields leak in
     expect(Object.keys(d).sort()).toEqual(
-      ['agreement', 'effectiveDocTypeId', 'intakeDocTypeId', 'intakeReady', 'intakeStatus', 'manualDocTypeId', 'reasonCodes', 'safeToBridge', 'service'].sort(),
+      ['agreement', 'bridgedReaderDocTypeId', 'effectiveDocTypeId', 'intakeDocTypeId', 'intakeReady', 'intakeStatus', 'manualDocTypeId', 'reasonCodes', 'safeToBridge', 'service'].sort(),
     )
     expect(json).not.toMatch(/name|birth_date|surname|passport_number/i)
+  })
+})
+
+describe('intake→reader docType mapping + bridged decision (controlled bridge crux)', () => {
+  it('maps Soviet/modern birth certificate to the reader ua_birth_certificate', () => {
+    expect(intakeToReaderDocType('ua_birth_certificate_soviet')).toBe('ua_birth_certificate')
+    expect(intakeToReaderDocType('ua_birth_certificate_modern')).toBe('ua_birth_certificate')
+    expect(intakeToReaderDocType('ua_marriage_certificate')).toBe('ua_marriage_certificate')
+  })
+  it('ambiguous/unmapped intake types → null (fail-closed to manual)', () => {
+    for (const t of ['passport', 'i94', 'ead_card', 'us_immigration_notice', 'unknown', null]) {
+      expect(intakeToReaderDocType(t)).toBe(null)
+    }
+  })
+  it('ready Soviet birth cert → bridgedReaderDocTypeId=ua_birth_certificate, effective still manual', () => {
+    const d = decideReaderDocType('ua_internal_passport_booklet', obs({ brainDocTypeId: 'ua_birth_certificate_soviet', typeMatchesDeclared: false }))
+    expect(d.safeToBridge).toBe(true)
+    expect(d.bridgedReaderDocTypeId).toBe('ua_birth_certificate') // what controlled mode would read with
+    expect(d.effectiveDocTypeId).toBe('ua_internal_passport_booklet') // decision-shadow: still manual
+  })
+  it('safe but unmapped intake type → bridged null + no_reader_mapping reason', () => {
+    const d = decideReaderDocType('ua_internal_passport_booklet', obs({ brainDocTypeId: 'passport', typeMatchesDeclared: false }))
+    expect(d.safeToBridge).toBe(true)
+    expect(d.bridgedReaderDocTypeId).toBe(null)
+    expect(d.reasonCodes).toContain('no_reader_mapping')
+  })
+  it('not safe → bridged null', () => {
+    const d = decideReaderDocType('ua_internal_passport_booklet', obs({ brainDocTypeId: 'ua_birth_certificate_soviet', readyForRecognition: false }))
+    expect(d.bridgedReaderDocTypeId).toBe(null)
   })
 })
