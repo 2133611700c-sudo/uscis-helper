@@ -1,20 +1,18 @@
 name: Staging Keep-Alive (Free-tier idle guard)
 
 # Supabase Free auto-pauses a project after ~7 days with zero DB/API activity.
-# The isolated staging project (ADR-023) is intentionally on a separate Free
-# account and stays idle between V1 release pushes, so Supabase paused-pending
-# warnings will fire whenever no PR touches staging for a week.
+# The isolated staging project (ADR-023) is on a separate Free account and stays
+# idle between V1 release pushes, so Supabase paused-pending warnings fire whenever
+# no PR touches staging for a week.
 #
-# This workflow performs the cheapest possible activity that Supabase counts as
-# usage: a single `SELECT 1` against the staging DB through the IPv4 session
-# pooler (same endpoint `staging-provision.yml` and `staging-webhook-replay-proof.yml`
-# already use). Read-only, no DDL, no data writes.
+# This workflow makes the cheapest possible activity Supabase counts as usage:
+# a single request to the staging Auth health endpoint through the API gateway.
+# No DB password needed — uses the publishable (anon) key, which is non-sensitive
+# by design (it ships in client bundles). Read-only, no DDL, no data writes.
 #
-# Required existing secrets (already used by other staging workflows):
-#   STAGING_SUPABASE_PROJECT_REF   — must equal rxnlpvldngxgdxkxoaaj (staging)
-#   STAGING_SUPABASE_DB_PASSWORD   — staging DB password
-# Optional:
-#   STAGING_DB_POOLER_HOST         — defaults to aws-1-us-west-1.pooler.supabase.com
+# Required secrets:
+#   STAGING_SUPABASE_PROJECT_REF   — must equal rxnlpvldngxgdxkxoaaj (staging), != prod
+#   STAGING_SUPABASE_ANON_KEY      — publishable/anon key (non-sensitive)
 #
 # Hard guard: refuses to run if the target ref equals the production ref.
 
@@ -32,7 +30,7 @@ env:
 
 jobs:
   keepalive:
-    name: SELECT 1 on staging (idle-guard)
+    name: Ping staging auth health (idle-guard)
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -48,29 +46,19 @@ jobs:
           fi
           echo "guard_ok: target=$STAGING_REF (not prod)"
 
-      - name: Install psql client
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client
-          psql --version
-
-      - name: SELECT 1 via IPv4 session pooler
+      - name: Ping auth health endpoint (counts as project activity)
         env:
-          POOLER_HOST: ${{ secrets.STAGING_DB_POOLER_HOST || 'aws-1-us-west-1.pooler.supabase.com' }}
-          DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
-          if [ -z "${DB_PASSWORD:-}" ]; then
-            echo "::error::STAGING_SUPABASE_DB_PASSWORD secret missing — refusing to run."
+          if [ -z "${ANON_KEY:-}" ]; then
+            echo "::error::STAGING_SUPABASE_ANON_KEY secret missing — refusing to run."
             exit 1
           fi
-          # urlencode the password (defensive: passwords may contain reserved chars)
-          ENC_PW=$(python3 -c "import urllib.parse,os;print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")
-          DB="postgresql://postgres.${STAGING_REF}:${ENC_PW}@${POOLER_HOST}:5432/postgres?sslmode=require"
-          # one read-only round trip; output should be exactly "1"
-          OUT=$(psql "$DB" -tAc 'select 1;' | tr -d '[:space:]')
-          if [ "$OUT" != "1" ]; then
-            echo "::error::keepalive query did not return 1 (got: '$OUT')"
+          URL="https://${STAGING_REF}.supabase.co/auth/v1/health"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL" -H "apikey: ${ANON_KEY}")
+          if [ "$CODE" != "200" ]; then
+            echo "::error::keepalive ping did not return 200 (got: $CODE)"
             exit 1
           fi
-          echo "keepalive_ok: SELECT 1 on staging returned 1 at $(date -u +%FT%TZ)"
+          echo "keepalive_ok: staging auth health 200 at $(date -u +%FT%TZ)"
