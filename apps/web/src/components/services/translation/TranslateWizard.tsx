@@ -1621,6 +1621,45 @@ export function TranslateWizard() {
         passes: ['gemini_vision_read'],
         ocr_ids: [],
       }))
+      // CANONICAL_CONTINUITY (edit-persistence): before generating the certified PDF,
+      // persist the user's in-review corrections as CONFIRMED canonical overrides. In
+      // shadow/enforce mode generate-pdf resolves the canonical document (which applies
+      // overrides via resolveCanonicalDocument) and renders finalValue — so without this
+      // the certified PDF would show the RAW reader value, silently dropping the user's
+      // correction. Only fields the user actually changed (kind:'user_corrected') are
+      // written. Best-effort + fail-safe: any error (409/503/network) is swallowed and
+      // never blocks the paid PDF (behavior degrades to the prior, no worse).
+      if (canonicalDocumentId) {
+        const editedFields = extractedFields.filter(
+          (f) => (f as { kind?: string }).kind === 'user_corrected',
+        )
+        if (editedFields.length > 0) {
+          try {
+            let expectedVersion = 0
+            const gv = await fetch(`/api/canonical/${canonicalDocumentId}/override`)
+            if (gv.ok) {
+              const j = (await gv.json().catch(() => null)) as { current_version?: number } | null
+              if (j && typeof j.current_version === 'number') expectedVersion = j.current_version
+            }
+            await fetch(`/api/canonical/${canonicalDocumentId}/override`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                expected_version: expectedVersion,
+                overrides: editedFields.map((f) => ({
+                  field_key: f.field,
+                  override_value: f.value ?? null,
+                  source: 'user_edit',
+                  confirmed: true,
+                  reason: 'user_corrected_in_review',
+                })),
+              }),
+            })
+          } catch {
+            // best-effort: a failed override write must never block the paid PDF.
+          }
+        }
+      }
       const res = await fetch('/api/translation/generate-pdf', {
         method: 'POST',
         headers: {
