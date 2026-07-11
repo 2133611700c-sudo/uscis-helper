@@ -27,7 +27,12 @@ describe('Translation route — B→A decision-shadow wiring is safe + OFF by de
 
   it('the whole block is inside try/catch (never affects the response)', () => {
     const block = SRC.slice(SRC.indexOf('isIntakeShadowEnabled() || isReaderControlEnabled()'))
-    expect(block).toMatch(/try \{[\s\S]{0,900}decideReaderDocType[\s\S]{0,300}\} catch/)
+    // intent, not brittle char-counts: try opens, decideReaderDocType runs inside, catch closes
+    expect(block).toMatch(/try \{/)
+    expect(block).toContain('decideReaderDocType')
+    expect(block).toMatch(/\} catch/)
+    expect(block.indexOf('decideReaderDocType')).toBeGreaterThan(block.indexOf('try {'))
+    expect(block.indexOf('} catch')).toBeGreaterThan(block.indexOf('decideReaderDocType'))
   })
 
   it('the reader reads through effectiveReaderDocTypeId, initialised to the manual type (OFF = byte-identical)', () => {
