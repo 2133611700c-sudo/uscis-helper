@@ -15,8 +15,10 @@ import path from 'node:path'
 const SRC = fs.readFileSync(path.resolve(__dirname, '..', 'route.ts'), 'utf-8')
 
 describe('Translation route — ONE_BRAIN_INTAKE_SHADOW wiring is safe + zero-cost when OFF', () => {
-  it('the shadow block is gated behind isIntakeShadowEnabled()', () => {
-    expect(SRC).toMatch(/if \(isIntakeShadowEnabled\(\)\)/)
+  it('the shadow block is gated behind isIntakeShadowEnabled() (now also triggers on the reader-control flag)', () => {
+    // The block runs when EITHER the observe-shadow flag OR the B→A decision-shadow flag is on;
+    // when both are OFF it is skipped entirely (zero cost). Still gated, never unconditional.
+    expect(SRC).toMatch(/if \(isIntakeShadowEnabled\(\) \|\| isReaderControlEnabled\(\)\)/)
   })
 
   it('the shadow block is wrapped in try/catch (never affects the response)', () => {
