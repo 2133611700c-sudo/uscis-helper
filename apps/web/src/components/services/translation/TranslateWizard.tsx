@@ -49,6 +49,10 @@ type Locale = 'en' | 'uk' | 'ru' | 'es'
 // ON → vision-extract is called; all fields come back review_required=true (hard-case
 // policy); user must confirm each field before payment; 0-field fallback → manual path.
 const HARD_CASE_AUTOREAD = process.env.NEXT_PUBLIC_HARD_CASE_AUTOREAD_ENABLED === '1'
+// ONE BRAIN auto-detect (default OFF ⇒ wizard unchanged). When ON, screen 2 offers an
+// "I'm not sure / detect automatically" option: the upload is sent WITHOUT a docType hint and the
+// server's One Brain intake selects the reader (needs ONE_BRAIN_CONTROLS_READER on server-side).
+const AUTO_DETECT_ENABLED = process.env.NEXT_PUBLIC_ONE_BRAIN_AUTO_DETECT === '1'
 // OPERATOR FLOW (PIVOT 2026-06-11): a paid order goes to the operator queue and
 // the customer is redirected to /order/{id} — they never confirm fields or
 // download the PDF themselves. OFF ⇒ the legacy self-serve screens (7+).
@@ -945,6 +949,8 @@ export function TranslateWizard() {
 
   const [screen, setScreen] = useState<Screen>(1)
   const [selectedDocType, setSelectedDocType] = useState<DocTypeChoice | null>(null)
+  // One Brain auto-detect: user did not pick a type — the server intake selects the reader.
+  const [autoDetect, setAutoDetect] = useState(false)
   // Multi-page support: a document may span multiple pages (booklet identity
   // page, then registration, then photo page; or birth-cert front + back).
   // We collect all pages here in upload order and send them all to OCR.
@@ -1252,7 +1258,7 @@ export function TranslateWizard() {
   // preferring the earliest non-empty value per field name. Booklet identity
   // page typically wins; later pages fill in anything page 1 missed.
   const startProcessing = useCallback(async () => {
-    if (uploadedFiles.length === 0 || !selectedDocType) return
+    if (uploadedFiles.length === 0 || (!selectedDocType && !autoDetect)) return
     setProcStep(1)
     setProcSlow(false)
     setScanWarning(false)
@@ -1281,7 +1287,8 @@ export function TranslateWizard() {
     // Phase 2.1a: hard-case docs (birth/marriage) can opt into autoread via flag.
     // If autoread is true, call vision-extract and surface fields for review.
     // 0-field result → fall through to the manual path (no fields = specialist handles it).
-    const shouldCallVisionExtract = (meta?.auto || meta?.autoread) && !!registryId
+    // autoDetect ⇒ always call vision-extract WITHOUT a hint; the server intake picks the reader.
+    const shouldCallVisionExtract = autoDetect || ((meta?.auto || meta?.autoread) && !!registryId)
 
     try {
       if (!shouldCallVisionExtract) {
@@ -1312,7 +1319,8 @@ export function TranslateWizard() {
         })
         form.append('file', prepared.blob, prepared.name)
       }
-      form.append('docTypeId', registryId!)
+      // autoDetect ⇒ send NO docTypeId ⇒ the server's One Brain intake selects the reader.
+      if (!autoDetect) form.append('docTypeId', registryId!)
       const res = await fetch('/api/translation/vision-extract', { method: 'POST', body: form })
       tickers.forEach(clearTimeout)
       setProcStep(5)
@@ -1365,6 +1373,13 @@ export function TranslateWizard() {
             .filter((f) => f.value || (f as any).review_required)
         : []
       setExtractedFields(fields)
+      // AUTO-DETECT: the server's One Brain intake picked the reader. Adopt the returned doc_type_id
+      // so the review/success screens (titles, sample rows, order metadata) have a concrete type.
+      if (autoDetect) {
+        const serverType = (json as { doc_type_id?: string }).doc_type_id
+        const matched = serverType ? DOC_TYPES.find((d) => d.registryId === serverType) : undefined
+        if (matched) setSelectedDocType(matched.id)
+      }
       // CANONICAL_CONTINUITY (CAPTURE): store the canonical_document_id the server
       // persisted for this read. Only a string is accepted — null/absent (shadow
       // persist failure or continuity=off) stores null so RESEND sends nothing.
@@ -1385,7 +1400,7 @@ export function TranslateWizard() {
       setProcStep(5)
       goTo(5)
     }
-  }, [uploadedFiles, selectedDocType, goTo])
+  }, [uploadedFiles, selectedDocType, autoDetect, goTo])
 
   // ── Edit a single field (TPS RW pattern: native prompt for max a11y) ──
   // Mirrors TPSWizardV2's approach: window.prompt is universally accessible
@@ -1814,9 +1829,9 @@ export function TranslateWizard() {
               <button
                 key={d.id}
                 type="button"
-                aria-pressed={selectedDocType === d.id}
-                className={`tw-doc-tile ${d.popular ? 'popular' : ''} ${selectedDocType === d.id ? 'tw-selected' : ''}`}
-                onClick={() => setSelectedDocType(d.id)}
+                aria-pressed={selectedDocType === d.id && !autoDetect}
+                className={`tw-doc-tile ${d.popular ? 'popular' : ''} ${selectedDocType === d.id && !autoDetect ? 'tw-selected' : ''}`}
+                onClick={() => { setSelectedDocType(d.id); setAutoDetect(false) }}
               >
                 {d.popular && <span className="tw-popular-badge">{t.s2_popular}</span>}
                 <div className="tw-doc-icon">{d.icon}</div>
@@ -1824,6 +1839,18 @@ export function TranslateWizard() {
                 {t.doc[d.id].hint && <div className="tw-doc-hint">{t.doc[d.id].hint}</div>}
               </button>
             ))}
+            {AUTO_DETECT_ENABLED && (
+              <button
+                type="button"
+                aria-pressed={autoDetect}
+                className={`tw-doc-tile ${autoDetect ? 'tw-selected' : ''}`}
+                onClick={() => { setAutoDetect(true); setSelectedDocType(null) }}
+              >
+                <div className="tw-doc-icon">🤖</div>
+                <div className="tw-doc-name">{locale === 'uk' ? 'Не знаю тип — визначити автоматично' : locale === 'en' ? "I'm not sure — detect automatically" : locale === 'es' ? 'No estoy seguro — detectar automáticamente' : 'Не знаю тип — определить автоматически'}</div>
+                <div className="tw-doc-hint">{locale === 'uk' ? 'Система сама визначить документ' : locale === 'en' ? 'The system identifies the document' : locale === 'es' ? 'El sistema identifica el documento' : 'Система сама определит документ'}</div>
+              </button>
+            )}
           </div>
           {selectedDocType && (() => {
             const m = DOC_TYPES.find((d) => d.id === selectedDocType)
@@ -1843,7 +1870,7 @@ export function TranslateWizard() {
             )
           })()}
           <div style={{ marginTop: 20 }}>
-            <button className="tw-btn-primary" disabled={!selectedDocType} onClick={() => goTo(3)}>{t.next}</button>
+            <button className="tw-btn-primary" disabled={!selectedDocType && !autoDetect} onClick={() => goTo(3)}>{t.next}</button>
           </div>
           <div style={{ marginTop: 14, textAlign: 'center', fontSize: 13 }}>
             <a href="/supported-documents" target="_blank" rel="noreferrer" style={{ color: 'var(--acc, #2c6e9e)', textDecoration: 'underline' }}>
