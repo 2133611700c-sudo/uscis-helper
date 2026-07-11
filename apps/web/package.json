@@ -17,6 +17,7 @@
     "benchmark:cyrillic-private": "tsx scripts/cyrillic-acceptance.ts"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^0.1.65",
     "@sentry/nextjs": "^10.51.0",
     "@stripe/stripe-js": "^9.4.0",
     "@supabase/ssr": "^0.6.1",
@@ -37,6 +38,7 @@
     "next": "^15.3.1",
     "next-intl": "^4.1.0",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "resend": "^6.12.2",

@@ -37,6 +37,9 @@ import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from 
 import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { runIntakeShadow, isIntakeShadowEnabled } from '@/lib/docintel/intake/shadowRunner'
+import { isDocNormalizeEnabled } from '@/lib/docintel/normalize/flags'
+import { normalizeDocument } from '@/lib/docintel/normalize/normalizeDocument'
+import type { NormalizedPage } from '@/lib/docintel/normalize/types'
 import { isReaderControlEnabled, decideReaderDocType } from '@/lib/docintel/intake/readerBridge'
 import { buildRealIntakeProviders, declaredToCanonical } from '@/lib/docintel/intake/realProviders'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
@@ -244,9 +247,14 @@ async function POST_impl(req: NextRequest) {
     }
   }
   // Validate every page before spending any vision budget.
+  // PDF is accepted ONLY when Document Normalization is ON (it rasterizes PDF →
+  // per-page images). With normalization OFF a PDF is rejected exactly as today.
+  const acceptedMime = isDocNormalizeEnabled()
+    ? new Set([...ALLOWED_MIME, 'application/pdf'])
+    : ALLOWED_MIME
   for (const file of rawFiles) {
     const mime = file.type || 'image/jpeg'
-    if (!ALLOWED_MIME.has(mime)) {
+    if (!acceptedMime.has(mime)) {
       return NextResponse.json(
         { ok: false, error: `Unsupported image type: ${mime}. Use JPEG, PNG, WebP, or HEIC.` },
         { status: 415 },
@@ -260,6 +268,37 @@ async function POST_impl(req: NextRequest) {
     }
   }
 
+  // ── Document Normalization — default OFF ⇒ byte-identical ────────────────────
+  // Physically upright + deskewed pages (and PDF→image raster) that BOTH intake
+  // and the reader consume. On PDF-raster/decode failure we DO NOT silently pass
+  // an unreadable input downstream — we return a typed needs_better_scan 200. NO
+  // paid/LLM call is on this path (sharp EXIF + tesseract OSD + projection deskew).
+  let normalizedPages: NormalizedPage[] | null = null
+  if (isDocNormalizeEnabled()) {
+    const raws = await Promise.all(
+      rawFiles.map(async (f) => ({
+        buffer: Buffer.from(await f.arrayBuffer()),
+        mimeType: f.type || 'image/jpeg',
+      })),
+    )
+    const norm = await normalizeDocument(raws, { maxPages: MAX_PAGES })
+    if (norm.pages.length === 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: 'needs_better_scan',
+          review_required: true,
+          reason: 'document_normalization_failed',
+          fields: null,
+          error: 'Could not process this file (PDF render or image decode failed). Please upload a clear photo.',
+          doc_type_id: docTypeId,
+        },
+        { status: 200 },
+      )
+    }
+    normalizedPages = norm.pages
+  }
+
   // ── One Brain intake + B→A CONTROLLED bridge — default OFF ⇒ byte-identical ──────────────────
   // The intake brain reads the RAW first page with NO human hint. With ONE_BRAIN_CONTROLS_READER on
   // (Preview only), when the bridge decision is SAFE and maps to a real reader-registry type, the
@@ -271,7 +310,11 @@ async function POST_impl(req: NextRequest) {
     try {
       const shadowProviders = buildRealIntakeProviders()
       if (shadowProviders) {
-        const firstBuf = Buffer.from(new Uint8Array(await rawFiles[0].arrayBuffer()))
+        // When normalization is ON, intake reads the normalized upright first page
+        // (identical buffer the reader consumes); OFF ⇒ the raw first file as before.
+        const firstBuf = normalizedPages
+          ? normalizedPages[0].buffer
+          : Buffer.from(new Uint8Array(await rawFiles[0].arrayBuffer()))
         // ONE intake run, reused by both the observe-shadow and the B→A bridge decision below.
         const obs = await runIntakeShadow(
           firstBuf,
@@ -343,16 +386,26 @@ async function POST_impl(req: NextRequest) {
     // sum. Paid Gemini tier handles 2-6 concurrent calls; per-page timeout
     // stays 40s. Merge order is preserved by index (earliest page still wins
     // in the arbiter) — results are awaited as a positional array.
-    const corePages = await Promise.all(rawFiles.map(async (file, i) => {
+    // When normalization is ON, the reader physically consumes the SAME normalized
+    // upright page buffers intake saw; OFF ⇒ the raw uploaded files (byte-identical
+    // to the previous rawFiles loop). Index `i` semantics are preserved.
+    const pagesToRead = normalizedPages
+      ? normalizedPages.map((p) => ({ buf: p.buffer, mime: p.mimeType }))
+      : await Promise.all(
+          rawFiles.map(async (f) => ({
+            buf: Buffer.from(await f.arrayBuffer()),
+            mime: f.type || 'image/jpeg',
+          })),
+        )
+    const corePages = await Promise.all(pagesToRead.map(async ({ buf, mime }, i) => {
       // HEIC was already converted to JPEG at intake (heicToJpeg, top of handler).
-      const buffer = Buffer.from(await file.arrayBuffer())
       // timeoutMs is the TOTAL deadline per page across the fallback chain (not
       // per attempt). Handwritten/Soviet docs need the model to think 40-70s, so
       // 40s was too tight (it failed a real Soviet birth cert outright). Pages run
       // in PARALLEL, so a generous per-page budget still fits maxDuration=120.
       // attemptsPerModel:1 so a slow primary doesn't burn the budget on a retry —
       // the budget goes to the faster fallback models instead.
-      const r = await readDocument(buffer, file.type || 'image/jpeg', effectiveReaderDocTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation' })
+      const r = await readDocument(buf, mime, effectiveReaderDocTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation' })
       return { i, r }
     }))
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []

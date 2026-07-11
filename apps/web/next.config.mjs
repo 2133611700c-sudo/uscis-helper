@@ -7,6 +7,13 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 const nextConfig = {
   transpilePackages: ['@uscis-helper/db', '@uscis-helper/shared'],
 
+  // Native / worker packages used ONLY inside API routes via dynamic import()
+  // (Document Normalization: PDF raster + deterministic OSD orientation). Keep
+  // them external so webpack does not try to bundle the native .node binary /
+  // web-worker into the serverless function (which would break `next build`).
+  // They load at runtime from node_modules only when a PDF/orientation path runs.
+  serverExternalPackages: ['@napi-rs/canvas', 'pdfjs-dist', 'tesseract.js'],
+
   async redirects() {
     return [
       // 301 redirect from old standalone HTML wizard to new Next.js wizard
