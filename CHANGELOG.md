@@ -1,4 +1,16 @@
 # CHANGELOG
+
+## 2026-07-11 | Vertical Slice #1 PR-1: reader OpenAI fallback (resilience, default OFF)
+### Added
+- `providers/openaiVisionProvider.ts` — VisionProvider via OpenAI vision (gpt-4.1), REUSES the Gemini
+  field prompt (parity). Flag `ONE_BRAIN_READER_FALLBACK` (default OFF). Strict timeout, honest
+  errorStatus/errorTimeout, never throws.
+- `documentFieldReader.ts` — on a RETRIABLE primary failure (429/5xx/timeout) and flag ON, ONE OpenAI
+  fallback read. Non-primary model ⇒ force-reviewed downstream (candidate-only, never auto-final).
+  Only when no provider injected. Exported gemini `buildPrompt` for prompt parity.
+- Tests: provider parse/HTTP-error/timeout/no-key + reader fallback source-guard.
+### Not done
+- Flag not enabled anywhere. No TPS/EAD/Re-Parole. Gemini stays primary. Handwriting stays force-review.
 <!-- 2026-07-10 test: make intakeShadowWiring try/catch assertion robust (intent, not char-count) after decision-shadow enlarged the block. -->
 <!-- 2026-07-10 fix: update intakeShadowWiring.test regex for the new `||isReaderControlEnabled()` guard (decision-shadow). -->
 

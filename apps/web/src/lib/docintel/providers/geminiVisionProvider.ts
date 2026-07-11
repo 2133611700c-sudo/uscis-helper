@@ -52,7 +52,7 @@ function modelFallback(): string[] {
   return [...new Set([primary, 'gemini-3.5-flash', 'gemini-2.5-flash'])]
 }
 
-function buildPrompt(spec: DocTypeSpec): string {
+export function buildPrompt(spec: DocTypeSpec): string {
   const lines = spec.fields.map((f) => {
     const dateHint = f.kind === 'date' ? ' (also return iso_date YYYY-MM-DD)' : ''
     const nameHint = f.kind === 'name' && spec.script === 'mixed'

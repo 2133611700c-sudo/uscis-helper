@@ -1,3 +1,4 @@
+<!-- 2026-07-11 Vertical Slice #1 PR-1: reader OpenAI fallback (ONE_BRAIN_READER_FALLBACK default OFF) on retriable Gemini failure; non-primary=force-review. Branch feat/reader-openai-fallback. Next: controlled B->A bridge, review UI wiring, E2E. -->
 <!-- 2026-07-10 test: make intakeShadowWiring try/catch assertion robust (intent, not char-count) after decision-shadow enlarged the block. -->
 <!-- 2026-07-10 fix: update intakeShadowWiring.test regex for the new `||isReaderControlEnabled()` guard (decision-shadow). -->
 <!-- 2026-07-10 B->A decision-shadow (Translation only, ONE_BRAIN_CONTROLS_READER default OFF): shared readerBridge.decideReaderDocType records intake-vs-manual decision PII-free, reader still manual, byte-identical. Branch feat/one-brain-reader-bridge-shadow. Next: controlled-bridge phase + reuse in TPS/EAD/ReParole. -->
