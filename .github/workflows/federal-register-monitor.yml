@@ -31,10 +31,11 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           FEDERAL_REGISTER_USER_AGENT: ${{ secrets.FEDERAL_REGISTER_USER_AGENT }}
         run: npx tsx scripts/monitoring/monitor-federal-register.ts
-      - name: Build and send daily digest
+      - name: Build digest and attempt delivery
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           CONTACT_EMAIL_DESTINATION: ${{ secrets.CONTACT_EMAIL_DESTINATION }}
+          EMAIL_STRICT: '0'
         run: npx tsx scripts/monitoring/build-digest-email.ts

@@ -52,7 +52,13 @@ async function main(): Promise<void> {
 
   const alerts = (data || []) as AlertRow[]
   if (!alerts.length) {
-    console.log('No unacknowledged alerts in last 24h. Skipping digest email.')
+    console.log(
+      JSON.stringify({
+        event: 'digest_summary',
+        alerts_included: 0,
+        delivery_status: 'skipped_no_alerts',
+      }),
+    )
     return
   }
 
@@ -83,12 +89,21 @@ async function main(): Promise<void> {
 </body>
 </html>`
 
-  await sendDigest(html, subject)
-  console.log(`Digest built. Alerts included: ${alerts.length}`)
+  const delivery = await sendDigest(html, subject, { strict: false })
+  console.log(
+    JSON.stringify({
+      event: 'digest_summary',
+      alerts_included: alerts.length,
+      delivery_status: delivery.status,
+      delivery_reason: delivery.reason || null,
+      http_status: delivery.httpStatus || null,
+      strict: delivery.strict,
+    }),
+  )
 }
 
 main().catch((error) => {
-  console.error(error)
+  const message = error instanceof Error ? error.message : 'Unknown digest failure'
+  console.error(JSON.stringify({ event: 'digest_failure', message }))
   process.exit(1)
 })
-

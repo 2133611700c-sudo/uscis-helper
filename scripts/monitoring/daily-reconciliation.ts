@@ -2,7 +2,7 @@
 // tickets still open ≥24h, so nothing falls through the escalation cracks. Uses the
 // TESTED ticketsForDigest logic; thin glue.
 import { supabase } from './lib/supabase-client'
-import { sendDigest } from './lib/email'
+import { sendDailyReconciliationDigest } from './lib/daily-reconciliation-email'
 import { ticketsForDigest, type OpenTicketState } from '../../apps/web/src/lib/documentSafety/ticketEscalation'
 
 const OPEN_STATUSES = ['pending', 'in_review', 'queued', 'assigned', 'needs_user_clarification']
@@ -38,8 +38,11 @@ async function main(): Promise<void> {
     <p style="color:#64748b;font-size:12px;">Messenginfo L1 reconciliation. PII-free (ticket ids only).</p>
   </body></html>`
 
-  await sendDigest(html, `Messenginfo — ${overdue.length} paid-failure tickets >24h (${day})`)
-  console.log(`[daily-reconciliation] overdue=${overdue.length} digest sent`)
+  await sendDailyReconciliationDigest(
+    html,
+    `Messenginfo — ${overdue.length} paid-failure tickets >24h (${day})`,
+    overdue.length,
+  )
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })
