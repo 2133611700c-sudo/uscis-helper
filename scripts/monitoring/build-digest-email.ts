@@ -100,6 +100,7 @@ async function main(): Promise<void> {
       provider_error_code: delivery.providerErrorCode || null,
       provider_field: delivery.providerField || null,
       provider_error_hint: delivery.providerErrorHint || null,
+      delivery_transport: delivery.transport || 'direct',
       strict: delivery.strict,
     }),
   )

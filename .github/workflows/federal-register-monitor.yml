@@ -4,6 +4,13 @@ on:
   schedule:
     - cron: '0 14 * * *'  # 09:00 ET = 14:00 UTC (winter) — adjust if DST critical
   workflow_dispatch:
+  # Temporary one-shot proof for the signed production relay. Remove before merge.
+  push:
+    branches:
+      - agent/cutover-resend-relay-20260725
+    paths:
+      - .github/workflows/federal-register-monitor.yml
+      - scripts/monitoring/lib/email.ts
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -35,7 +42,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_RELAY_URL: https://messenginfo.com/api/internal/monitor-digest
+          DIGEST_RELAY_SIGNING_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           CONTACT_EMAIL_DESTINATION: ${{ secrets.CONTACT_EMAIL_DESTINATION }}
           EMAIL_STRICT: '0'
         run: npx tsx scripts/monitoring/build-digest-email.ts

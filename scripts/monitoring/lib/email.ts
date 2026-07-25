@@ -1,3 +1,5 @@
+import { signDigestRelayPayload } from '../../../apps/web/src/lib/monitoring/digestRelayAuth'
+
 export type DigestDeliveryResult = {
   status: 'sent' | 'degraded'
   reason?:
@@ -6,10 +8,13 @@ export type DigestDeliveryResult = {
     | 'provider_error'
     | 'network_error'
     | 'timeout'
+    | 'missing_relay_key'
+    | 'invalid_relay_url'
   httpStatus?: number
   providerErrorCode?: string
   providerField?: string
   providerErrorHint?: string
+  transport?: 'relay'
   strict: boolean
 }
 
@@ -140,15 +145,79 @@ async function safeProviderDetails(response: Response): Promise<SafeProviderDeta
   }
 }
 
+async function sendViaRelay(
+  relayUrl: string,
+  relaySecret: string,
+  to: string,
+  html: string,
+  subject: string,
+  strict: boolean,
+): Promise<DigestDeliveryResult> {
+  let parsedRelayUrl: URL
+  try {
+    parsedRelayUrl = new URL(relayUrl)
+  } catch {
+    return degraded('invalid_relay_url', strict)
+  }
+  if (parsedRelayUrl.protocol !== 'https:') {
+    return degraded('invalid_relay_url', strict)
+  }
+  if (!relaySecret) {
+    return degraded('missing_relay_key', strict)
+  }
+
+  const timestamp = String(Date.now())
+  const body = JSON.stringify({ to, subject, html })
+  const signature = signDigestRelayPayload(body, timestamp, relaySecret)
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), resendTimeoutMs())
+
+  let response: Response
+  try {
+    response = await fetch(parsedRelayUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-monitor-timestamp': timestamp,
+        'x-monitor-signature': signature,
+      },
+      body,
+      signal: controller.signal,
+    })
+  } catch {
+    return degraded(controller.signal.aborted ? 'timeout' : 'network_error', strict)
+  } finally {
+    clearTimeout(timeoutId)
+  }
+
+  if (!response.ok) {
+    return degraded('provider_error', strict, response.status)
+  }
+
+  const result: DigestDeliveryResult = {
+    status: 'sent',
+    strict,
+    transport: 'relay',
+  }
+  emitDeliveryEvent(result)
+  return result
+}
+
 export async function sendDigest(
   html: string,
   subject: string,
   options: DigestDeliveryOptions = {},
 ): Promise<DigestDeliveryResult> {
   const strict = options.strict ?? strictEmailDelivery()
+  const relayUrl = (process.env.DIGEST_RELAY_URL || '').trim()
+  const relaySecret = (process.env.DIGEST_RELAY_SIGNING_KEY || '').trim()
   const rawApiKey = process.env.RESEND_API_KEY || ''
   const apiKey = rawApiKey.trim()
   const to = (process.env.CONTACT_EMAIL_DESTINATION || '2133611700uscis@gmail.com').trim()
+
+  if (relayUrl) {
+    return sendViaRelay(relayUrl, relaySecret, to, html, subject, strict)
+  }
 
   if (!apiKey) {
     return degraded('missing_api_key', strict)
