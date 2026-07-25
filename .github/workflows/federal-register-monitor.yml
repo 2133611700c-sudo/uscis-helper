@@ -4,13 +4,6 @@ on:
   schedule:
     - cron: '0 14 * * *'  # 09:00 ET = 14:00 UTC (winter) — adjust if DST critical
   workflow_dispatch:
-  # Temporary one-shot proof for the signed production relay. Remove before merge.
-  push:
-    branches:
-      - agent/cutover-resend-relay-20260725
-    paths:
-      - .github/workflows/federal-register-monitor.yml
-      - scripts/monitoring/lib/email.ts
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
