@@ -4,19 +4,10 @@ on:
   schedule:
     - cron: '0 14 * * *'  # 09:00 ET = 14:00 UTC (winter) — adjust if DST critical
   workflow_dispatch:
-  # One-shot verification trigger for this recovery branch. Remove before merge.
-  push:
-    branches:
-      - agent/ops-email-staging-cleanup-20260725
-    paths:
-      - .github/workflows/federal-register-monitor.yml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-permissions:
-  contents: read
 
 jobs:
   monitor:
@@ -33,61 +24,6 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
-      - name: Load Resend key from Vercel production environment
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: team_qRGWLc9kKWuiKWouVsOeO1P4
-          VERCEL_PROJECT_ID: prj_G5Bwd5VMDqEMdbPKLlQW50aF3pQq
-        run: |
-          set -euo pipefail
-          if [ -z "${VERCEL_TOKEN:-}" ]; then
-            echo "::error::VERCEL_TOKEN secret missing — cannot load the production email key."
-            exit 1
-          fi
-
-          ENV_FILE="$(mktemp)"
-          trap 'rm -f "$ENV_FILE"' EXIT
-          npx --yes vercel@50.28.0 env pull "$ENV_FILE" \
-            --yes \
-            --environment=production \
-            --token="$VERCEL_TOKEN"
-
-          ENV_FILE="$ENV_FILE" node <<'NODE'
-          const fs = require('node:fs')
-
-          const line = fs
-            .readFileSync(process.env.ENV_FILE, 'utf8')
-            .split(/\r?\n/)
-            .find((entry) => entry.startsWith('RESEND_API_KEY='))
-
-          if (!line) {
-            console.error('::error::RESEND_API_KEY is absent from the Vercel production environment.')
-            process.exit(1)
-          }
-
-          const raw = line.slice('RESEND_API_KEY='.length).trim()
-          let value = raw
-          if (raw.startsWith('"')) {
-            try {
-              value = JSON.parse(raw)
-            } catch {
-              console.error('::error::RESEND_API_KEY has an invalid dotenv encoding.')
-              process.exit(1)
-            }
-          }
-
-          value = String(value).trim()
-          if (!value.startsWith('re_')) {
-            console.error('::error::RESEND_API_KEY from Vercel has an invalid format.')
-            process.exit(1)
-          }
-
-          console.log(`::add-mask::${value}`)
-          fs.appendFileSync(process.env.GITHUB_ENV, `RESEND_API_KEY=${value}\n`, {
-            mode: 0o600,
-          })
-          console.log('resend_key_source=vercel_production')
-          NODE
       - run: pnpm install --frozen-lockfile
       - name: Run Federal Register monitor
         env:
@@ -99,6 +35,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           CONTACT_EMAIL_DESTINATION: ${{ secrets.CONTACT_EMAIL_DESTINATION }}
           EMAIL_STRICT: '0'
         run: npx tsx scripts/monitoring/build-digest-email.ts
