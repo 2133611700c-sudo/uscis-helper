@@ -4,15 +4,6 @@ on:
   schedule:
     - cron: '0 14 * * *'  # 09:00 ET = 14:00 UTC (winter) — adjust if DST critical
   workflow_dispatch:
-  # Temporary branch-only trigger for one PII-safe provider validation diagnostic.
-  # Remove after the diagnostic run, before merge.
-  push:
-    branches:
-      - agent/fix-resend-validation-20260725
-    paths:
-      - .github/workflows/federal-register-monitor.yml
-      - scripts/monitoring/lib/email.ts
-      - scripts/monitoring/build-digest-email.ts
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

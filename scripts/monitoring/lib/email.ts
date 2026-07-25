@@ -116,7 +116,9 @@ async function safeProviderDetails(response: Response): Promise<SafeProviderDeta
       return quoted.test(message) || named.test(message)
     })
     const providerErrorHint =
-      /only send testing emails to your own email address/i.test(message)
+      /api key.{0,30}invalid|invalid.{0,30}api key/i.test(message)
+        ? 'invalid_api_key'
+        : /only send testing emails to your own email address/i.test(message)
         ? 'testing_recipient_restriction'
         : /(?:verify|verified|verification).{0,40}domain|domain.{0,40}(?:verify|verified|verification)/i.test(
               message,
