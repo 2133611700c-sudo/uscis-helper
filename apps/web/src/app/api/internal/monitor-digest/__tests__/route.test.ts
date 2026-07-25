@@ -76,6 +76,9 @@ describe('POST /api/internal/monitor-digest', () => {
     expect((init.headers as Record<string, string>).Authorization).toBe(
       'Bearer re_valid_production_key',
     )
+    expect((init.headers as Record<string, string>)['Idempotency-Key']).toMatch(
+      /^monitor-digest-[a-f0-9]{32}$/,
+    )
     expect(init.body).toContain('"to":"owner@example.com"')
     expect(init.signal).toBeInstanceOf(AbortSignal)
   })

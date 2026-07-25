@@ -82,6 +82,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       headers: {
         Authorization: `Bearer ${resendKey}`,
         'Content-Type': 'application/json',
+        'Idempotency-Key': `monitor-digest-${signature.slice(0, 32)}`,
         'User-Agent': 'messenginfo-monitor-relay/1.0',
       },
       body: JSON.stringify({
