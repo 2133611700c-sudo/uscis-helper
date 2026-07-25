@@ -92,15 +92,47 @@ describe('sendDigest', () => {
       httpStatus: 400,
       providerErrorCode: 'validation_error',
       providerField: 'to',
+      providerErrorHint: 'field_validation',
       strict: false,
     })
 
     const output = warn.mock.calls.flat().join(' ')
     expect(output).toContain('"providerErrorCode":"validation_error"')
     expect(output).toContain('"providerField":"to"')
+    expect(output).toContain('"providerErrorHint":"field_validation"')
     expect(output).not.toContain('private-owner@example.com')
     expect(output).not.toContain('private digest')
     expect(output).not.toContain('Private subject')
+  })
+
+  it('classifies a testing-account restriction without logging its recipient', async () => {
+    process.env.RESEND_API_KEY = 're_test_key'
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: vi.fn().mockResolvedValue({
+          name: 'validation_error',
+          message:
+            'You can only send testing emails to your own email address (private-owner@example.com).',
+        }),
+      }),
+    )
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    await expect(sendDigest('<p>digest</p>', 'Subject')).resolves.toEqual({
+      status: 'degraded',
+      reason: 'provider_error',
+      httpStatus: 400,
+      providerErrorCode: 'validation_error',
+      providerErrorHint: 'testing_recipient_restriction',
+      strict: false,
+    })
+
+    const output = warn.mock.calls.flat().join(' ')
+    expect(output).toContain('"providerErrorHint":"testing_recipient_restriction"')
+    expect(output).not.toContain('private-owner@example.com')
   })
 
   it('preserves a strict hard-fail mode for explicit runs', async () => {

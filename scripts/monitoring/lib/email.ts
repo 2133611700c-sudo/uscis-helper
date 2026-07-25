@@ -9,6 +9,7 @@ export type DigestDeliveryResult = {
   httpStatus?: number
   providerErrorCode?: string
   providerField?: string
+  providerErrorHint?: string
   strict: boolean
 }
 
@@ -36,7 +37,7 @@ const SAFE_PROVIDER_FIELDS = [
 
 type SafeProviderDetails = Pick<
   DigestDeliveryResult,
-  'providerErrorCode' | 'providerField'
+  'providerErrorCode' | 'providerField' | 'providerErrorHint'
 >
 
 function strictEmailDelivery(): boolean {
@@ -101,13 +102,31 @@ async function safeProviderDetails(response: Response): Promise<SafeProviderDeta
       : undefined
 
     const message = typeof record.message === 'string' ? record.message : ''
-    const providerField = SAFE_PROVIDER_FIELDS.find((field) =>
-      new RegExp(`(?:\`|'|")${field}(?:\`|'|")`, 'i').test(message),
-    )
+    const providerField = SAFE_PROVIDER_FIELDS.find((field) => {
+      const quoted = new RegExp(`(?:\`|'|")${field}(?:\`|'|")`, 'i')
+      const named = new RegExp(
+        `(?:\\b${field}\\b\\s+(?:field|address|parameter|property)|(?:field|parameter|property)\\s+\\b${field}\\b)`,
+        'i',
+      )
+      return quoted.test(message) || named.test(message)
+    })
+    const providerErrorHint =
+      /only send testing emails to your own email address/i.test(message)
+        ? 'testing_recipient_restriction'
+        : /(?:verify|verified|verification).{0,40}domain|domain.{0,40}(?:verify|verified|verification)/i.test(
+              message,
+            )
+          ? 'domain_verification'
+          : /\b(?:daily )?quota\b/i.test(message)
+            ? 'quota_exceeded'
+            : providerField
+              ? 'field_validation'
+              : undefined
 
     return {
       ...(providerErrorCode ? { providerErrorCode } : {}),
       ...(providerField ? { providerField } : {}),
+      ...(providerErrorHint ? { providerErrorHint } : {}),
     }
   } catch {
     return {}

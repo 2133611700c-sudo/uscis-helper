@@ -1,6 +1,6 @@
 # CHANGELOG
 ## 2026-07-15 | Monitoring email policy split: fail-soft monitor, fail-closed paid-failure reconciliation
-<!-- 2026-07-25 Resend diagnostic (in flight): after PR #32 removed the obsolete staging keep-alive, add allowlisted logging for Resend provider error code and rejected request field name. Provider messages, addresses, digest content, and secrets remain excluded. Temporary branch push trigger exists only for the one-shot HTTP 400 validation diagnostic and must be removed before merge. -->
+<!-- 2026-07-25 Resend diagnostic (in flight): run 30162581912 identified validation_error HTTP 400 with no standard field name. Extend the PII-safe diagnostic to emit only allowlisted policy hints (testing-recipient restriction, domain verification, quota, or field validation). Provider messages, addresses, digest content, and secrets remain excluded. Temporary branch push trigger remains only for the second diagnostic run and must be removed before merge. -->
 - Audited every `sendDigest` call site (2 total) and made policy explicit per caller: Federal Register digest `{ strict: false }`; daily paid-failure reconciliation `{ strict: true }` plus workflow `EMAIL_STRICT=1` defense in depth.
 - Added `daily-reconciliation-email.ts`: only emits a PII-free `sent` summary after confirmed provider success; a degraded result throws and cannot be mislabeled as sent.
 - Added focused coverage for caller overrides, strict reconciliation, degraded fail-closed behavior, workflow policy, and log redaction.
