@@ -73,6 +73,98 @@ describe('sendDigest', () => {
     })
   })
 
+  it('emits only allowlisted provider diagnostics without leaking the response message', async () => {
+    process.env.RESEND_API_KEY = 're_test_key'
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: vi.fn().mockResolvedValue({
+        name: 'validation_error',
+        message: 'The `to` field contains private-owner@example.com and is invalid.',
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    await expect(sendDigest('<p>private digest</p>', 'Private subject')).resolves.toEqual({
+      status: 'degraded',
+      reason: 'provider_error',
+      httpStatus: 400,
+      providerErrorCode: 'validation_error',
+      providerField: 'to',
+      providerErrorHint: 'field_validation',
+      strict: false,
+    })
+
+    const output = warn.mock.calls.flat().join(' ')
+    expect(output).toContain('"providerErrorCode":"validation_error"')
+    expect(output).toContain('"providerField":"to"')
+    expect(output).toContain('"providerErrorHint":"field_validation"')
+    expect(output).not.toContain('private-owner@example.com')
+    expect(output).not.toContain('private digest')
+    expect(output).not.toContain('Private subject')
+  })
+
+  it('classifies a testing-account restriction without logging its recipient', async () => {
+    process.env.RESEND_API_KEY = 're_test_key'
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: vi.fn().mockResolvedValue({
+          name: 'validation_error',
+          error:
+            'You can only send testing emails to your own email address (private-owner@example.com).',
+        }),
+      }),
+    )
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    await expect(sendDigest('<p>digest</p>', 'Subject')).resolves.toEqual({
+      status: 'degraded',
+      reason: 'provider_error',
+      httpStatus: 400,
+      providerErrorCode: 'validation_error',
+      providerErrorHint: 'testing_recipient_restriction',
+      strict: false,
+    })
+
+    const output = warn.mock.calls.flat().join(' ')
+    expect(output).toContain('"providerErrorHint":"testing_recipient_restriction"')
+    expect(output).not.toContain('private-owner@example.com')
+  })
+
+  it('classifies Resend invalid-key text without logging the provider message', async () => {
+    process.env.RESEND_API_KEY = 're_test_key'
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: vi.fn().mockResolvedValue({
+          statusCode: 400,
+          name: 'validation_error',
+          message: 'API key is invalid',
+        }),
+      }),
+    )
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    await expect(sendDigest('<p>digest</p>', 'Subject')).resolves.toEqual({
+      status: 'degraded',
+      reason: 'provider_error',
+      httpStatus: 400,
+      providerErrorCode: 'validation_error',
+      providerErrorHint: 'invalid_api_key',
+      strict: false,
+    })
+
+    const output = warn.mock.calls.flat().join(' ')
+    expect(output).toContain('"providerErrorHint":"invalid_api_key"')
+    expect(output).not.toContain('API key is invalid')
+  })
+
   it('preserves a strict hard-fail mode for explicit runs', async () => {
     process.env.RESEND_API_KEY = 're_test_key'
     process.env.EMAIL_STRICT = '1'

@@ -7,6 +7,9 @@ export type DigestDeliveryResult = {
     | 'network_error'
     | 'timeout'
   httpStatus?: number
+  providerErrorCode?: string
+  providerField?: string
+  providerErrorHint?: string
   strict: boolean
 }
 
@@ -17,6 +20,25 @@ export type DigestDeliveryOptions = {
 const DEFAULT_RESEND_TIMEOUT_MS = 15_000
 const MIN_RESEND_TIMEOUT_MS = 100
 const MAX_RESEND_TIMEOUT_MS = 30_000
+const SAFE_PROVIDER_FIELDS = [
+  'from',
+  'to',
+  'subject',
+  'html',
+  'text',
+  'reply_to',
+  'cc',
+  'bcc',
+  'attachments',
+  'headers',
+  'tags',
+  'scheduled_at',
+] as const
+
+type SafeProviderDetails = Pick<
+  DigestDeliveryResult,
+  'providerErrorCode' | 'providerField' | 'providerErrorHint'
+>
 
 function strictEmailDelivery(): boolean {
   return process.env.EMAIL_STRICT === '1'
@@ -41,12 +63,14 @@ function degraded(
   reason: NonNullable<DigestDeliveryResult['reason']>,
   strict: boolean,
   httpStatus?: number,
+  providerDetails: SafeProviderDetails = {},
 ): DigestDeliveryResult {
   const result: DigestDeliveryResult = {
     status: 'degraded',
     reason,
     strict,
     ...(typeof httpStatus === 'number' ? { httpStatus } : {}),
+    ...providerDetails,
   }
 
   emitDeliveryEvent(result)
@@ -57,6 +81,63 @@ function degraded(
   }
 
   return result
+}
+
+async function safeProviderDetails(response: Response): Promise<SafeProviderDetails> {
+  try {
+    const body: unknown = await response.json()
+    if (!body || typeof body !== 'object') return {}
+
+    const record = body as Record<string, unknown>
+    const rawCode =
+      typeof record.name === 'string'
+        ? record.name
+        : typeof record.type === 'string'
+          ? record.type
+          : typeof record.code === 'string'
+            ? record.code
+            : ''
+    const providerErrorCode = /^[a-z][a-z0-9_]{0,63}$/.test(rawCode)
+      ? rawCode
+      : undefined
+
+    const message =
+      typeof record.message === 'string'
+        ? record.message
+        : typeof record.error === 'string'
+          ? record.error
+          : ''
+    const providerField = SAFE_PROVIDER_FIELDS.find((field) => {
+      const quoted = new RegExp(`(?:\`|'|")${field}(?:\`|'|")`, 'i')
+      const named = new RegExp(
+        `(?:\\b${field}\\b\\s+(?:field|address|parameter|property)|(?:field|parameter|property)\\s+\\b${field}\\b)`,
+        'i',
+      )
+      return quoted.test(message) || named.test(message)
+    })
+    const providerErrorHint =
+      /api key.{0,30}invalid|invalid.{0,30}api key/i.test(message)
+        ? 'invalid_api_key'
+        : /only send testing emails to your own email address/i.test(message)
+        ? 'testing_recipient_restriction'
+        : /(?:verify|verified|verification).{0,40}domain|domain.{0,40}(?:verify|verified|verification)/i.test(
+              message,
+            )
+          ? 'domain_verification'
+          : /\b(?:daily )?quota\b/i.test(message)
+            ? 'quota_exceeded'
+            : providerField
+              ? 'field_validation'
+              : undefined
+
+    return {
+      ...(providerErrorCode ? { providerErrorCode } : {}),
+      ...(providerField ? { providerField } : {}),
+      ...(providerErrorHint ? { providerErrorHint } : {}),
+    }
+  } catch {
+    return {}
+  }
 }
 
 export async function sendDigest(
@@ -114,7 +195,12 @@ export async function sendDigest(
   }
 
   if (!response.ok) {
-    return degraded('provider_error', strict, response.status)
+    return degraded(
+      'provider_error',
+      strict,
+      response.status,
+      await safeProviderDetails(response),
+    )
   }
 
   const result: DigestDeliveryResult = { status: 'sent', strict }
