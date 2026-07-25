@@ -1,5 +1,6 @@
 # CHANGELOG
 ## 2026-07-15 | Monitoring email policy split: fail-soft monitor, fail-closed paid-failure reconciliation
+<!-- 2026-07-25 ops recovery (in flight): remove obsolete Staging Keep-Alive after git evidence proved staging was deleted on 2026-07-08 (87ee8b20) and the old ref returns 502 Connection refused. Change Federal Register Monitor to source the existing RESEND_API_KEY from Vercel production at runtime via masked, ephemeral env transfer using the repo-held VERCEL_TOKEN. Temporary branch-only push trigger exists solely for one-shot delivery verification and must be removed before merge. -->
 - Audited every `sendDigest` call site (2 total) and made policy explicit per caller: Federal Register digest `{ strict: false }`; daily paid-failure reconciliation `{ strict: true }` plus workflow `EMAIL_STRICT=1` defense in depth.
 - Added `daily-reconciliation-email.ts`: only emits a PII-free `sent` summary after confirmed provider success; a degraded result throws and cannot be mislabeled as sent.
 - Added focused coverage for caller overrides, strict reconciliation, degraded fail-closed behavior, workflow policy, and log redaction.
