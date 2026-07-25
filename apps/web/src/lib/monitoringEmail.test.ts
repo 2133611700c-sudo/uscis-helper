@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { sendDigest } from '../../../../scripts/monitoring/lib/email'
+import { verifyDigestRelaySignature } from './monitoring/digestRelayAuth'
 
 describe('sendDigest', () => {
   const originalEnv = { ...process.env }
@@ -10,6 +11,8 @@ describe('sendDigest', () => {
     delete process.env.EMAIL_STRICT
     delete process.env.CONTACT_EMAIL_DESTINATION
     delete process.env.RESEND_TIMEOUT_MS
+    delete process.env.DIGEST_RELAY_URL
+    delete process.env.DIGEST_RELAY_SIGNING_KEY
     vi.restoreAllMocks()
   })
 
@@ -53,6 +56,38 @@ describe('sendDigest', () => {
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit
     expect((request.headers as Record<string, string>).Authorization).toBe('Bearer re_test_key')
     expect(request.signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('uses the signed production relay without a GitHub Resend key', async () => {
+    process.env.DIGEST_RELAY_URL =
+      'https://messenginfo.com/api/internal/monitor-digest'
+    process.env.DIGEST_RELAY_SIGNING_KEY = 'shared-service-role-secret'
+    process.env.CONTACT_EMAIL_DESTINATION = 'owner@example.com'
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.spyOn(console, 'log').mockImplementation(() => undefined)
+
+    await expect(sendDigest('<p>digest</p>', 'Subject')).resolves.toEqual({
+      status: 'sent',
+      strict: false,
+      transport: 'relay',
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const [url, request] = fetchMock.mock.calls[0] as [URL, RequestInit]
+    expect(url.toString()).toBe(
+      'https://messenginfo.com/api/internal/monitor-digest',
+    )
+    const headers = request.headers as Record<string, string>
+    expect(
+      verifyDigestRelaySignature(
+        request.body as string,
+        headers['x-monitor-timestamp'],
+        headers['x-monitor-signature'],
+        'shared-service-role-secret',
+      ),
+    ).toBe(true)
+    expect(request.body).toContain('"to":"owner@example.com"')
   })
 
   it('returns a degraded provider status by default', async () => {
