@@ -7,6 +7,8 @@ export type DigestDeliveryResult = {
     | 'network_error'
     | 'timeout'
   httpStatus?: number
+  providerErrorCode?: string
+  providerField?: string
   strict: boolean
 }
 
@@ -17,6 +19,25 @@ export type DigestDeliveryOptions = {
 const DEFAULT_RESEND_TIMEOUT_MS = 15_000
 const MIN_RESEND_TIMEOUT_MS = 100
 const MAX_RESEND_TIMEOUT_MS = 30_000
+const SAFE_PROVIDER_FIELDS = [
+  'from',
+  'to',
+  'subject',
+  'html',
+  'text',
+  'reply_to',
+  'cc',
+  'bcc',
+  'attachments',
+  'headers',
+  'tags',
+  'scheduled_at',
+] as const
+
+type SafeProviderDetails = Pick<
+  DigestDeliveryResult,
+  'providerErrorCode' | 'providerField'
+>
 
 function strictEmailDelivery(): boolean {
   return process.env.EMAIL_STRICT === '1'
@@ -41,12 +62,14 @@ function degraded(
   reason: NonNullable<DigestDeliveryResult['reason']>,
   strict: boolean,
   httpStatus?: number,
+  providerDetails: SafeProviderDetails = {},
 ): DigestDeliveryResult {
   const result: DigestDeliveryResult = {
     status: 'degraded',
     reason,
     strict,
     ...(typeof httpStatus === 'number' ? { httpStatus } : {}),
+    ...providerDetails,
   }
 
   emitDeliveryEvent(result)
@@ -57,6 +80,38 @@ function degraded(
   }
 
   return result
+}
+
+async function safeProviderDetails(response: Response): Promise<SafeProviderDetails> {
+  try {
+    const body: unknown = await response.json()
+    if (!body || typeof body !== 'object') return {}
+
+    const record = body as Record<string, unknown>
+    const rawCode =
+      typeof record.name === 'string'
+        ? record.name
+        : typeof record.type === 'string'
+          ? record.type
+          : typeof record.code === 'string'
+            ? record.code
+            : ''
+    const providerErrorCode = /^[a-z][a-z0-9_]{0,63}$/.test(rawCode)
+      ? rawCode
+      : undefined
+
+    const message = typeof record.message === 'string' ? record.message : ''
+    const providerField = SAFE_PROVIDER_FIELDS.find((field) =>
+      new RegExp(`(?:\`|'|")${field}(?:\`|'|")`, 'i').test(message),
+    )
+
+    return {
+      ...(providerErrorCode ? { providerErrorCode } : {}),
+      ...(providerField ? { providerField } : {}),
+    }
+  } catch {
+    return {}
+  }
 }
 
 export async function sendDigest(
@@ -114,7 +169,12 @@ export async function sendDigest(
   }
 
   if (!response.ok) {
-    return degraded('provider_error', strict, response.status)
+    return degraded(
+      'provider_error',
+      strict,
+      response.status,
+      await safeProviderDetails(response),
+    )
   }
 
   const result: DigestDeliveryResult = { status: 'sent', strict }
