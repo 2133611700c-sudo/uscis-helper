@@ -1,6 +1,6 @@
 /**
  * openaiVisionProvider.test.ts — the OpenAI resilience fallback reader.
- * Covers: flag default OFF, JSON parse into VisionFieldRead[], HTTP-error → errorStatus,
+ * Covers: environment-aware flag policy, JSON parse into VisionFieldRead[], HTTP-error → errorStatus,
  * timeout → errorTimeout, and missing key → honest error (never throws into the caller).
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
@@ -22,9 +22,14 @@ const img = Buffer.from('fake-image-bytes')
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); delete process.env.OPENAI_API_KEY })
 
 describe('reader fallback flag', () => {
-  it('ONE_BRAIN_READER_FALLBACK default OFF', () => {
+  it('defaults OFF outside production and ON in production with an explicit kill switch', () => {
     expect(isReaderFallbackEnabled({})).toBe(false)
     expect(isReaderFallbackEnabled({ ONE_BRAIN_READER_FALLBACK: '1' })).toBe(true)
+    expect(isReaderFallbackEnabled({ VERCEL_ENV: 'production' })).toBe(true)
+    expect(isReaderFallbackEnabled({
+      VERCEL_ENV: 'production',
+      ONE_BRAIN_READER_FALLBACK: '0',
+    })).toBe(false)
   })
 })
 

@@ -11,9 +11,16 @@
 import type { DocTypeSpec, VisionFieldRead, VisionProvider, VisionReadResult } from '../types'
 import { buildPrompt } from './geminiVisionProvider'
 
-/** Flag: enable the OpenAI reader fallback. Default OFF ⇒ Gemini-only, byte-identical. */
+/**
+ * Enable the OpenAI reader fallback.
+ *
+ * Production defaults ON after the 2026-07-25 Gemini 429 incident. An explicit
+ * `ONE_BRAIN_READER_FALLBACK=0` remains the immediate kill switch. Preview and
+ * local environments stay opt-in so experiments remain isolated.
+ */
 export function isReaderFallbackEnabled(env: Record<string, string | undefined> = process.env): boolean {
-  return env.ONE_BRAIN_READER_FALLBACK === '1'
+  if (env.ONE_BRAIN_READER_FALLBACK === '0') return false
+  return env.ONE_BRAIN_READER_FALLBACK === '1' || env.VERCEL_ENV === 'production'
 }
 
 /** Strict budget for the single fallback read (never let it exceed the primary's own budget). */
