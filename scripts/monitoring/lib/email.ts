@@ -101,7 +101,12 @@ async function safeProviderDetails(response: Response): Promise<SafeProviderDeta
       ? rawCode
       : undefined
 
-    const message = typeof record.message === 'string' ? record.message : ''
+    const message =
+      typeof record.message === 'string'
+        ? record.message
+        : typeof record.error === 'string'
+          ? record.error
+          : ''
     const providerField = SAFE_PROVIDER_FIELDS.find((field) => {
       const quoted = new RegExp(`(?:\`|'|")${field}(?:\`|'|")`, 'i')
       const named = new RegExp(

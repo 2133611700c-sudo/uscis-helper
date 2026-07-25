@@ -114,7 +114,7 @@ describe('sendDigest', () => {
         status: 400,
         json: vi.fn().mockResolvedValue({
           name: 'validation_error',
-          message:
+          error:
             'You can only send testing emails to your own email address (private-owner@example.com).',
         }),
       }),
