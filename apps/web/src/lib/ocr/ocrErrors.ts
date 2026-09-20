@@ -30,7 +30,7 @@ export type OcrErrorCode =
   | 'OCR_BUDGET_EXCEEDED'
   /** 200 (or any) with no usable fields AND a provider error marker. NOT a success, NOT retryable here. */
   | 'OCR_INVALID_RESPONSE'
-  /** 403 BILLING_DISABLED — account-level config problem. NOT retryable. */
+  /** 402 payment required or 403 BILLING_DISABLED — account-level billing problem. NOT retryable. */
   | 'OCR_BILLING_DISABLED'
 
 /** Typed, PII-free description of a provider failure. */
@@ -174,7 +174,12 @@ export function classifyProviderError(
   // 1) Our own budget kill-switch — highest precedence (don't even talk to provider).
   if (opts?.budgetExceeded) return make('OCR_BUDGET_EXCEEDED', 'budget_kill_switch')
 
-  // 2) Billing disabled (403 + BILLING_DISABLED). Account-level, not retryable.
+  // 2) Billing/payment unavailable. HTTP 402 is Payment Required by definition
+  // and is terminal until the provider account is fixed; retrying only burns calls.
+  // Google may instead use 403 with an explicit BILLING_* reason.
+  if (httpStatus === 402) {
+    return make('OCR_BILLING_DISABLED', 'payment_required')
+  }
   if (httpStatus === 403 && /BILLING_DISABLED|BILLING_NOT_ACTIVE/.test(haystack)) {
     return make('OCR_BILLING_DISABLED', 'billing_disabled')
   }

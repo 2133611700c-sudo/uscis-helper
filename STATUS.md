@@ -216,3 +216,12 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 - V1 Program Guard + Session Docs Guard: green after this commit. Content guard still needs OWNER_PII_PATTERNS_B64 (owner).
 
 ##  | RELEASE_STATE.yaml repinned to real main HEAD (post-recreate); PR #2 only Content-guard red (secret)
+
+
+## 2026-09-20 | Message Info paused: automatic paid OCR probe disabled
+- Root cause verified: the hourly `OCR Availability Probe` continued independently of development activity and called `https://messenginfo.com/api/translation/vision-extract`.
+- Production transition: last success 2026-09-19 12:32 UTC; first failure 13:22 UTC on the same commit/deployment.
+- Vercel runtime evidence: Gemini returned HTTP 402; the route surfaced `OCR_INVALID_RESPONSE` as HTTP 502.
+- Decision: remove the schedule trigger; retain manual `workflow_dispatch` only.
+- Classifier: provider HTTP 402 now maps to non-retryable `OCR_BILLING_DISABLED`.
+- No domain, deployment, secret, or billing configuration changed.

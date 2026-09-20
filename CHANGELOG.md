@@ -1979,3 +1979,9 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ##  | fix(ci): RELEASE_STATE.yaml state_basis_main_sha -> real main HEAD (post-recreate hygiene)
 - prior pinned SHA c1ab3830 was killed by the PII delete+recreate; repinned to origin/main 02f21206. Greens RELEASE_STATE guard on PR #2. Remaining PR #2 red = Content guard (OWNER_PII_PATTERNS_B64 secret, owner-held).
+
+
+## 2026-09-20 | ops(monitoring): pause automatic paid OCR probe
+- Removed the hourly schedule from `OCR Availability Probe`; kept manual dispatch.
+- Classified upstream HTTP 402 Payment Required as `OCR_BILLING_DISABLED` (non-retryable, route HTTP 503).
+- Added regression coverage for the HTTP 402 mapping.
