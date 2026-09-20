@@ -54,6 +54,14 @@ describe('classifyProviderError', () => {
     expect(err.retryable).toBe(false)
   })
 
+  it('HTTP 402 Payment Required → OCR_BILLING_DISABLED, NOT retryable', () => {
+    const err = classifyProviderError(402)
+    expect(err.error_code).toBe('OCR_BILLING_DISABLED')
+    expect(err.retryable).toBe(false)
+    expect(err.detail).toBe('payment_required')
+    expect(httpStatusForOcrError(err.error_code)).toBe(503)
+  })
+
   it('5xx → OCR_PROVIDER_UNAVAILABLE, retryable', () => {
     for (const code of [500, 502, 503, 504]) {
       const err = classifyProviderError(code)

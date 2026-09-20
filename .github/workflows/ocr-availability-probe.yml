@@ -1,8 +1,9 @@
 name: OCR Availability Probe
 
 # P1 (2026-06-14). The paid OCR availability check that USED to run on every
-# production deploy (burning Vision quota + failing on transient rate-limits)
-# now runs HERE, on a schedule, rate-limited to ONE endpoint request per run.
+# production deploy (burning Vision quota + failing on transient rate-limits).
+# The project is currently paused, so automatic paid-provider probes are disabled.
+# Keep workflow_dispatch for an explicit pre-resume or incident check only.
 #
 # Goal: detect a SUSTAINED OCR outage (provider hard-down / billing disabled /
 # credentials broken), NOT a momentary rate-limit. Because vision-extract now
@@ -15,8 +16,8 @@ name: OCR Availability Probe
 # passport). No auto re-run loop — one endpoint request, one verdict. The reader
 # may make multiple provider attempts within that endpoint request.
 on:
-  schedule:
-    - cron: '17 * * * *'   # hourly, offset :17 to avoid top-of-hour cron pileup
+  # Intentionally manual-only while Message Info is paused.
+  # Re-enable a schedule only together with an explicit production-active decision.
   workflow_dispatch:
 
 concurrency:

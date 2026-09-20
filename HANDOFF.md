@@ -1481,3 +1481,10 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 - NEXT: owner sets OWNER_PII_PATTERNS_B64 secret (Content & Brand guard needs it; only real needed secret).
 
 ##  | RELEASE_STATE guard fixed (stale SHA repinned); PR #2 remaining red = OWNER_PII_PATTERNS_B64 secret
+
+
+## 2026-09-20 | OCR monitor pause handoff
+- Message Info is paused. Do not re-enable scheduled paid OCR probes implicitly.
+- `.github/workflows/ocr-availability-probe.yml` is manual-only.
+- Before resuming production OCR: resolve the Gemini HTTP 402 account/billing condition, run the workflow manually, verify a successful or expected review response, then make an explicit decision about monitoring cadence.
+- The daily read-only smoke and Federal Register monitor were not changed; they serve different functions.
